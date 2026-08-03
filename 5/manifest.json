@@ -1,0 +1,9 @@
+{
+  "id": "5",
+  "name": "5",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "A status bar Pomodoro timer that changes colors and handles left, right, and middle clicks.",
+  "author": "Your Name",
+  "isDesktopOnly": false
+}

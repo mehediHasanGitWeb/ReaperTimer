@@ -1,0 +1,816 @@
+*{box-sizing: border-box;}
+.modal-controlar {
+  display: grid;
+  grid-template-rows: 200px 1fr;
+  background-color: dodgerblue;
+  padding: 10px;
+  height: 1200px;
+  width: 2400px;
+}
+
+.controlar {
+  background-color: #f1f1f1;
+  border: 1px solid black;
+  padding: 10px;
+  text-align: center;
+  width: 500px;
+}
+
+.controlar-btn {
+
+
+  
+
+  background-color: #bd1a1a;
+  border: 1px solid black;
+  display: grid;
+  align-items: center;
+  justify-content: center;
+position: relative;
+  padding: 0;
+  border-radius: 6px;
+  
+  background-color: #363636;
+  color: #dadada;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.controlar-btn-help {
+  background-color: #2b261f;
+  display: grid;
+}
+
+.controlar-btn-edit {
+  background-color: #a6998a;
+  border: 1px solid black;
+  width: 480px;
+  display: grid;
+  grid-template-columns: 1fr 1fr  ;
+  box-shadow: 5px 5px 15px #735040,-5px -5px 15px #d9d0c1;
+}
+.controlar-btn-edit-task {
+  background-color: #ff3c00;
+  border: 1px solid black;
+  padding: 10px;
+}
+
+.controlar-btn-plus {
+  background-color: #21c954;
+  border: 1px solid black;
+  padding: 10px;
+  
+  text-align: center;
+  position: fixed;
+  height: 75px;
+  width: 75px;
+  top: 80px;
+  right: 0;
+}
+
+.controlar-btn-theme {
+  background-color: #e4e41a;
+  /* height: 500px; */
+
+ 
+  
+}
+
+.controlar-btn-right {
+  background-color: #d67608;
+  border: 1px solid black;
+  
+  display: grid;
+  z-index: 1000;
+  height: 75px;
+  width: 75px;
+  top: 50%;
+  left: 0;
+}
+
+.controlar-btn-left {
+  background-color: #0eb81c;
+  border: 1px solid black;
+ position: sticky;
+  display: grid;
+  z-index: 1000;
+  height: 75px;
+  width: 75px;
+  top: 50%;
+  right: 0;
+}
+
+.slide-columns-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  /* Defines 3 equal-width columns */
+  gap: 10px;
+  /* Space between each slide column */
+}
+
+.slide-one {
+  background-color: #f1f1f1;
+  border: 1px solid black;
+  padding: 0px;
+  width: 500px;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  height: 350px;
+}
+
+.slide-one-time-line {
+  background-color: #d3be06;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-auto-rows: 1fr;
+  height: 350px;
+  /* max-height:10px ; */
+}
+
+.slide-one-time-line-task-scroll-bar {
+  background-color: #9b0977a6;
+  border: 1px solid black;
+  padding: 10px;
+  
+  text-align: center;
+  display: grid;
+
+  /* --- ADD THESE 2 LINES --- */
+  height: 350px;
+  /* Forces the element to strictly stay at 200px */
+  overflow-y: auto;
+  /* Makes the vertical scrollbar appear when content overflows */
+}
+
+.slide-one-time-line-task {
+  background-color: #090b9b;
+  border: 1px solid black;
+  padding: 10px;
+  
+  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  
+}
+.slide-one-time-line-task-global-task {
+  background-color: #a8049b;
+  border: 1px solid black;
+  padding: 10px;
+  
+  text-align: center;
+  display: grid;
+  
+}
+
+.slide-one-time-line-range {
+  background-color: #02c5bbec;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  height: 200px;
+  width: 100px;
+}
+
+.slide-one-time-line-range-label {
+  background-color: #c502a5ec;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  height: 150px;
+  width: 100px;
+}
+
+.slide-one-time-line-range-scroll {
+  background-color: #0e000bec;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  height: 50px;
+  width: 100px;
+}
+
+.slide-one-clock-part {
+  background-color: #06d321;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+}
+
+.slide-one-clock-part-end-time-line {
+  background-color: #023008;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+}
+
+.slide-one-clock-part-end-time-line-scroll-bar {
+  background-color: #120230;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 25fr;
+  overflow-y: auto;
+  max-height: 800px;
+  position: relative;
+}
+
+.slide-one-clock-part-end-time-line-scroll-bar-line {
+  background-color: #300502;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+}
+
+.slide-one-clock-part-end-time-line-scroll-bar-tasks {
+  background-color: #414b41;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+}
+
+.slide-one-clock-part-end-time-line-scroll-bar-control {
+  background-color: #068eb8;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: sticky;
+  top: 0;
+  width: 5px;
+  width: 5px;
+}
+
+.slide-one-clock-part-end-time-line-scroll-bar-control-expand-btn {
+  background-color: #ec2e0c;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: absolute;
+  top: 10px;
+  width: 111px;
+}
+
+.slide-one-clock-part-end-time-line-scroll-bar-control-range-bar {
+  background-color: #302d02;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: absolute;
+  top: 200px;
+  height: 150px;
+  width: 150px;
+  grid-template-columns: 2fr 1fr 22fr;
+}
+
+.slide-one-clock-part-global-colck {
+  background-color: #d3066c;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+}
+
+.slide-one-clock-part-gantt-chart {
+  background-color: #0647d3;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: relative;
+  /* grid-template-columns: 1fr 2fr 1fr; */
+}
+
+.slide-one-clock-part-gantt-chart-expand-btn {
+  background-color: #d35806;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: absolute;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  z-index: 100;
+  /* grid-template-columns: 1fr 2fr 1fr; */
+}
+
+.slide-one-clock-part-gantt-chart-time-axis {
+  background-color: #d3a306;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: absolute;
+  left: 0;
+
+  height: 100%;
+  width: 20px;
+}
+
+.slide-one-clock-part-gantt-chart-task-axis {
+  background-color: #06d3b8;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 100%;
+}
+
+.slide-one-clock-part-gantt-chart-page {
+  background-color: #afccc8;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: absolute;
+  right: 0;
+  height: 90%;
+  width: 40%;
+  overflow-y: auto;
+  overflow-x: auto;
+  grid-auto-rows: 100px;
+}
+
+.slide-one-clock-part-gantt-chart-page-tasks {
+  background-color: #c8ff00;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-auto-columns: auto;
+  grid-auto-flow: column;
+  /* Forces items inside to flow horizontally in a row */
+  height: 50px;
+}
+
+.slide-one-clock-part-gantt-chart-page-tasks-fonts {
+  background-color: #ff0884;
+  border: 1px solid black;
+  padding: 10px;
+  
+  text-align: center;
+  display: grid;
+  gap: 10px;
+  width: 10px;
+}
+
+/*======================== .slide-two  ==========================*/
+/*======================== .slide-two  ==========================*/
+.slide-two {
+  background-color: #f1f1f1b2;
+  border: 1px solid black;
+  padding: 10px;
+  
+  text-align: center;
+  display: grid;
+  grid-template-rows: 200px 100vh;
+  width: 500px;
+}
+
+.slide-two-badgesList {
+  background-color: #3b06b6b2;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  height: 150px;
+  /* grid-template-rows: 200px ; */
+}
+
+.slide-two-badgesList-scroll-bar {
+ 
+  overflow-x:scroll;
+
+  grid-template-rows: repeat(3, auto);
+  grid-template-columns:40px ;
+  /* grid-template-rows: auto auto auto; */
+  /* Creates exactly 3 rows */
+  grid-auto-flow: column;
+  /* Fills items top-to-bottom first, then left-to-right */
+  gap: 10px;
+  padding: 5px ;
+background-color: #06b606b2;
+  border: 1px solid black;
+  
+   -size: 12px;
+  text-align: center;
+  display: grid;
+
+  /* --- ADD THESE 2 LINES --- */
+  height: 100px;
+  /* width: 600px; */
+  /* Forces the element to strictly stay at 200px */
+  /* overflow-y: auto; */
+  /* Makes the vertical scrollbar appear when content overflows */
+
+
+  
+}
+
+
+.slide-two-badges {
+  background-color: #00000000;
+   -size: 0.78em;
+  padding: 5px;
+  
+  /*  -weight: 700; */
+  letter-spacing: 0.02em;
+  /* display: inline-block; */
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border: 2px solid ;
+  border-color: rgb(4, 72, 160);
+  border-radius: 12px;
+  width: 40px;
+}
+
+.slide-two-badges:hover {
+  background-color: #057a9bc2;
+}
+
+
+
+.slide-two-tasks-scrollbar {
+  background-color: #c56103b2;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  max-height: 100vh;
+  overflow-y: auto;
+  /* max-height: 1000000px; */
+}
+
+.slide-two-tasks-summery {
+  background-color: #c50303b2;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  position: sticky;
+  top: 0;
+
+  /* max-height: 1000000px; */
+}
+
+.slide-two-tasks-incomplete-category-name {
+  background-color: #ff8800;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+
+  /* max-height: 1000000px; */
+}
+
+
+.slide-two-tasks-incomplete-tasks {
+  background-color: #ffbb00;
+   /* background-color: var(--background-secondary); */
+  border: 1px solid var(black);
+  border-radius: 10px;
+  padding: 12px;
+  display: grid;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+ 
+
+  /* max-height: 1000000px; */
+}
+.slide-two-tasks-incomplete-tasks-container {
+  background-color: #ff0000;
+  border: 1px solid black;
+  padding: 10px;
+  display: grid;
+ grid-template-columns: 30px 1fr;
+ grid-template-rows: 1fr auto ;
+  /* max-height: 1000000px; */
+}
+
+.slide-two-tasks-disable {
+  color: #20f70c0c;
+  border: 1px solid black;
+height: 0 ;
+width: 0;
+pointer-events: none;
+
+  /* max-height: 1000000px; */
+}
+
+.slide-two-tasks-incomplete-tasks-container-header {
+  background-color: #66ff00;
+  color: black;
+  border: 1px solid black;
+  padding: 10px;
+  display: grid;
+  
+  /* max-height: 1000000px; */
+}
+.slide-two-tasks-incomplete-tasks-container-completed-label {
+  background-color: #00ffff;
+  border: 1px solid black;
+  padding: 10px;
+  display: grid;
+   
+
+  /* max-height: 1000000px; */
+}
+
+.slide-two-tasks-incomplete-tasks-container-details {
+  background-color: #ff00ff;
+  border: 1px solid black;
+  padding: 10px;
+  display: grid;
+  grid-auto-flow: column;
+    
+
+  /* max-height: 1000000px; */
+}
+
+.slide-two-tasks-colaps-btn {
+  background-color: #1900ff;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+
+  /* max-height: 1000000px; */
+}
+
+.slide-two-tasks-complete-category-name {
+  background-color: #ff8800a2;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+
+  /* max-height: 1000000px; */
+}
+
+.slide-two-tasks-complete-tasks {
+  background-color: #684d03;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+
+  /* max-height: 1000000px; */
+}
+
+.slide-three {
+  background-color: #f1f1f16b;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-template-rows: 200px 100vh;
+}
+
+/* 1. Corrected template layout (Notice 2 columns defined per row) */
+.slide-three-table-header {
+  background-color: #9600146b;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-template-areas:
+    "home reciveb"
+    "lists lists";
+  /* 'lists' is repeated twice to span across both columns */
+}
+
+/* 2. Removed quotation marks from all grid-area definitions */
+.slide-three-table-header-address-home {
+  background-color: #00000038;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  /* grid-template-columns: 1fr; */
+  grid-area: home;
+  /* NO QUOTES */
+}
+
+.slide-three-table-header-address-reciveb {
+  background-color: #75a010;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  /* grid-template-columns: 1fr; */
+  grid-area: reciveb;
+  /* NO QUOTES */
+}
+
+.slide-three-table-header-address-lists {
+  background-color: #008d4b;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-area: lists;
+  /* NO QUOTES */
+}
+
+.slide-three-table-body {
+  background-color: #0c96006b;
+  border: 1px solid black;
+  padding: 10px;
+   -size: 30px;
+  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*======================== Pomodoro Help Modal ==========================*/
+
+/* Form Container Styling */
+/* .controlar-btn-edit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    background: var(--background-secondary, #1e1e2e);
+    border: 1px solid var(--background-modifier-border, #313244);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin: 10px 0;
+    width: 800px;
+} */
+
+/* Form Header */
+.controlar-form-title {
+    grid-column: 1 / -1;
+    margin: 0 0 6px 0;
+    /*  -size: 1.1em;
+     -weight: 600; */
+    color: var(--text-normal, #cdd6f4);
+    border-bottom: 1px solid var(--background-modifier-border, #45475a);
+    padding-bottom: 6px;
+}
+
+/* Standard Inputs & Selects */
+.controlar-input,
+.controlar-select {
+    /* width: 100%; */
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border, #45475a);
+    background-color: var(--background-primary, #181825);
+    color: var(--text-normal, #cdd6f4);
+    /*  -size: 0.9em; */
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.controlar-input:focus,
+.controlar-select:focus {
+    border-color: var(--interactive-accent, #89b4fa);
+    box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.25);
+}
+
+
+
+/* Checkbox Alignment */
+.controlar-checkbox-label {
+    /* display: flex; */
+    align-items: center;
+    gap: 8px;
+    /*  -size: 0.88em; */
+    color: var(--text-muted, #a6adc8);
+    cursor: pointer;
+    user-select: none;
+}
+
+.controlar-checkbox {
+    cursor: pointer;
+    accent-color: var(--interactive-accent, #89b4fa);
+}
+
+/* Submit Button */
+.controlar-btn-submit {
+    grid-column: 1 / -1;
+    padding: 10px 16px;
+    /*  -weight: 600;
+     -size: 0.95em; */
+    border: none;
+    border-radius: 6px;
+    background-color: var(--interactive-accent, #89b4fa);
+    color: var(--text-on-accent, #11111b);
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.1s ease;
+}
+
+.controlar-btn-submit:hover {
+    filter: brightness(1.1);
+}
+
+.controlar-btn-submit:active {
+    transform: scale(0.98);
+}
+
+
+/* Color Picker Styling */
+.controlar-color-picker-wrapper {
+    /* display: flex; */
+    /* align-items: center; */
+    gap: 8px;
+    background-color: var(--background-primary, #181825);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border, #45475a);
+    width: 200px;
+    height: 40px;
+}
+
+
+
+.controlar-color-picker {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: transparent;
+}
+
+.controlar-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.controlar-color-picker::-webkit-color-swatch {
+    border: 1px solid var(--background-modifier-border, #45475a);
+    border-radius: 50%;
+}
