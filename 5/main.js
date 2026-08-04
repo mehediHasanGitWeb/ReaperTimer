@@ -226,7 +226,7 @@ const controlsBtn = (parentContainer, instance) => {
 
     // Right Navigation Button
     const rightBtn = buttonGroup.createEl('button', {
-        text: '◀ right',
+        text: 'right ▶',
         cls: 'controlar-btn controlar-btn-right'
     });
     rightBtn.addEventListener('click', () => {
@@ -239,7 +239,7 @@ const controlsBtn = (parentContainer, instance) => {
 
     // Left Navigation Button
     const leftBtn = buttonGroup.createEl('button', {
-        text: 'left ▶',
+        text: '◀ left',
         cls: 'controlar-btn controlar-btn-left'
     });
     leftBtn.addEventListener('click', () => {
@@ -252,25 +252,26 @@ const controlsBtn = (parentContainer, instance) => {
 };
 
 
-const attachTaskSelectionListener = (taskEl, taskId, place) => {
+const attachTaskSelectionListener = (taskEl, taskId, place, instance) => {
     taskEl.addEventListener('click', (e) => {
         if (place === PLACE_ID.SILDE_ONE_TIME_LINE) {
             console.log("taskEl:", taskEl, "taskId:", taskId, "place:", place);
 
-            if (selectedTaskForTimeLine && Array.isArray(selectedTaskForTimeLine)) {
-                let mappedIds = selectedTaskForTimeLine.flatMap(
-                    item => item.Tasks && item.Tasks.length > 0 ? item.Tasks.map(t => t.id) : [item.id]
-                );
-                console.log(mappedIds);
+            const globalTask = getIncompleteTasksWithCategory(fileData)
+                .find(item => item && item.id === taskId);
 
-                if (fileData.data && fileData.data.globalTasks && fileData.data.globalTasks.id !== taskId) {
-                    let newSelectedTask = selectedTaskForTimeLine
-                        .flatMap(item => item.Tasks && item.Tasks.length > 0 ? item.Tasks.map(f => f) : item)
-                        .filter(item => item.id === taskId);
+            const currentGlobalId = fileData?.data?.globalTasks?.id;
 
-                    console.log(newSelectedTask);
-                    fileData.data.globalTasks = newSelectedTask;
-                    console.log(fileData);
+            if (globalTask && currentGlobalId !== taskId) {
+                fileData.data = fileData.data || {};
+                fileData.data.globalTasks = globalTask;
+
+                if (instance && instance.plugin && typeof instance.plugin.saveData === 'function') {
+                    instance.plugin.saveData(fileData);
+                }
+
+                if (instance && typeof instance.refreshSlideOne === 'function') {
+                    instance.refreshSlideOne();
                 }
             }
         }
@@ -289,27 +290,43 @@ const attachTaskSelectionListener = (taskEl, taskId, place) => {
                         const isChecked = evt.target.checked;
                         console.log("Checkbox changed for task:", taskId, isChecked);
 
-                        // Update the task completion status in selectedTaskForTimeLine or fileData safely
+                        // Update the task completion status in fileData directly so
+                        // the change always persists, regardless of selectedTaskForTimeLine.
+                        const updateCompletion = (tasksList) => {
+                            if (!Array.isArray(tasksList)) return;
+                            const idx = tasksList.findIndex(t => t && t.id === taskId);
+                            if (idx === -1) return;
+                            const task = tasksList[idx];
+                            task.completed = isChecked;
+                            // Move the just-completed task to the front of its list
+                            // so it appears at the top of the completed section.
+                            if (isChecked) {
+                                tasksList.splice(idx, 1);
+                                tasksList.unshift(task);
+                            }
+                        };
+
+                        const categoryGroups = fileData?.data?.category || fileData?.category || [];
+                        if (Array.isArray(categoryGroups)) {
+                            categoryGroups.forEach(group => updateCompletion(group && group.Tasks));
+                        }
+                        updateCompletion(fileData?.data?.notCategoriseTasks || fileData?.notCategoriseTasks);
+
+                        // Also keep selectedTaskForTimeLine in sync for any other consumers
                         if (selectedTaskForTimeLine && Array.isArray(selectedTaskForTimeLine)) {
                             selectedTaskForTimeLine.forEach(group => {
-                                const tasksList = group.Tasks || (Array.isArray(group) ? group : [group]);
-                                tasksList.forEach(t => {
-                                    if (t.id === taskId) {
-                                        t.completed = isChecked;
-                                    }
-                                });
+                                updateCompletion(group.Tasks || (Array.isArray(group) ? group : [group]));
                             });
-                        }
-
-                        if (isChecked) {
-                            taskEl.classList.add('slide-two-tasks-disable');
-                        } else {
-                            taskEl.classList.remove('slide-two-tasks-disable');
                         }
 
                         // Persist data if instance and plugin are available
                         if (instance && instance.plugin && typeof instance.plugin.saveData === 'function') {
                             await instance.plugin.saveData(fileData);
+                        }
+
+                        // Re-render so the task moves to the completed section when checked
+                        if (instance && typeof instance.refreshSlideTwo === 'function') {
+                            instance.refreshSlideTwo();
                         }
                     });
                 }
@@ -576,15 +593,22 @@ const slideOneClockpart = (parentContainer, instance) => {
 // Helper function to extract all incomplete tasks with category names
 const getIncompleteTasksWithCategory = (data) => {
     const tasks = [];
+    const seenIds = new Set();
+
+    const pushTask = (task, categoryName) => {
+        if (task && task.id != null) {
+            if (seenIds.has(task.id)) return;
+            seenIds.add(task.id);
+        }
+        tasks.push({
+            ...(typeof task === 'object' ? task : { description: task }),
+            categoryName: categoryName
+        });
+    };
 
     // 1. Collect Uncategorized Incomplete Tasks
     const uncategorized = data?.notCategoriseTasksInComplete || data?.notCategoriseTasks || [];
-    uncategorized.forEach(task => {
-        tasks.push({
-            ...(typeof task === 'object' ? task : { description: task }),
-            categoryName: 'Uncategorized'
-        });
-    });
+    uncategorized.forEach(task => pushTask(task, 'Uncategorized'));
 
     // 2. Collect Incomplete Tasks from Categories
     const categories = data?.data?.category || data?.category || [];
@@ -597,12 +621,7 @@ const getIncompleteTasksWithCategory = (data) => {
             ? catTasks.filter(t => !t.completed && !t.isCompleted)
             : [];
 
-        incompleteCatTasks.forEach(task => {
-            tasks.push({
-                ...(typeof task === 'object' ? task : { description: task }),
-                categoryName: categoryName
-            });
-        });
+        incompleteCatTasks.forEach(task => pushTask(task, categoryName));
     });
 
     return tasks;
@@ -614,30 +633,37 @@ const slideOneTimeLine = (parentContainer, instance) => {
         .createEl('div', { cls: 'slide-one-time-line' })
         .createEl('div', { cls: 'slide-one-time-line-task-scroll-bar' });
 
-    if (selectedTaskForTimeLine && selectedTaskForTimeLine.length > 0) {
-        selectedTaskForTimeLine.forEach((task) => {
-            if (task.id === fileData.data.globalTasks.id) {
-                const taskEl = timeline.createEl('div', { cls: 'slide-one-time-line-task-global-task' });
+    const taskList = timeline.createDiv({ cls: 'slide-one-time-line-task-list' });
+
+    const renderTimeLine = () => {
+        selectedTaskForTimeLine = getIncompleteTasksWithCategory(fileData);
+        taskList.empty();
+
+        const globalTaskId = fileData?.data?.globalTasks?.id;
+
+        if (selectedTaskForTimeLine && selectedTaskForTimeLine.length > 0) {
+            selectedTaskForTimeLine.forEach((task) => {
+                const taskCls = task.id === globalTaskId
+                    ? 'slide-one-time-line-task-global-task'
+                    : 'slide-one-time-line-task';
+                const taskEl = taskList.createEl('div', { cls: taskCls });
                 taskEl.setText(`[${task.categoryName}] ${task.description || task.title || 'Task'}${task.id}`);
 
                 // Attach selection listener passing the actual task's ID
-                attachTaskSelectionListener(taskEl, task.id, PLACE_ID.SILDE_ONE_TIME_LINE);
-            } else {
-                const taskEl = timeline.createEl('div', { cls: 'slide-one-time-line-task' });
-                taskEl.setText(`[${task.categoryName}] ${task.description || task.title || 'Task'}${task.id}`);
+                attachTaskSelectionListener(taskEl, task.id, PLACE_ID.SILDE_ONE_TIME_LINE, instance);
+            });
+        } else {
+            taskList.createEl('div', { text: 'No incomplete tasks available.' });
+        }
+    };
 
-                // Attach selection listener passing the actual task's ID
-                attachTaskSelectionListener(taskEl, task.id, PLACE_ID.SILDE_ONE_TIME_LINE);
-            }
+    renderTimeLine();
 
-
-        });
-    } else {
-        timeline.createEl('div', { text: 'No incomplete tasks available.' });
-    }
     const timeLineRange = timeline.createDiv({ cls: "slide-one-time-line-range" });
     timeLineRange.createDiv({ text: 'rangeLabel', cls: "lide-one-time-line-range-label" });
     timeLineRange.createDiv({ text: 'rangescroll', cls: "slide-one-time-line-range-scroll" });
+
+    instance.refreshSlideOne = renderTimeLine;
 
 };
 
@@ -648,7 +674,7 @@ const slideOne = (parentContainer, instance) => {
 };
 
 
-const renderTaskCard = (container, taskEl, categoryName = "Uncategorized", className) => {
+const renderTaskCard = (container, taskEl, categoryName = "Uncategorized", className, instance) => {
 
 
     if (!taskEl) return;
@@ -675,10 +701,48 @@ const renderTaskCard = (container, taskEl, categoryName = "Uncategorized", class
     headerRow.createDiv({ cls: 'task-card-description', text: taskEl.description || taskEl.Name || 'No description' });
     const btnCircle = headerRow.createEl('button', { cls: 'task-card-action-btn-circle' });
 
-    if (typeof setIcon === 'function') {
-        setIcon(btnCircle, 'play');
+    if (taskEl.completed) {
+        if (typeof setIcon === 'function') {
+            setIcon(btnCircle, 'trash');
+        } else {
+            btnCircle.setText('✖');
+        }
+        btnCircle.classList.add('controlar-btn-delete-task');
+        btnCircle.addEventListener('click', async (evt) => {
+            evt.stopPropagation();
+            const categoryGroups = fileData?.data?.category || fileData?.category || [];
+            if (Array.isArray(categoryGroups)) {
+                for (const group of categoryGroups) {
+                    const tasks = group && group.Tasks;
+                    if (Array.isArray(tasks)) {
+                        const idx = tasks.findIndex(t => t && t.id === taskEl.id);
+                        if (idx !== -1) {
+                            tasks.splice(idx, 1);
+                            break;
+                        }
+                    }
+                }
+            }
+            const uncategorizedTasks = fileData?.data?.notCategoriseTasks || fileData?.notCategoriseTasks;
+            if (Array.isArray(uncategorizedTasks)) {
+                const idx = uncategorizedTasks.findIndex(t => t && t.id === taskEl.id);
+                if (idx !== -1) {
+                    uncategorizedTasks.splice(idx, 1);
+                }
+            }
+            if (instance && instance.plugin && typeof instance.plugin.saveData === 'function') {
+                await instance.plugin.saveData(fileData);
+            }
+            if (instance && typeof instance.refreshSlideTwo === 'function') {
+                instance.refreshSlideTwo();
+            }
+        });
     } else {
-        btnCircle.setText('▶');
+        if (typeof setIcon === 'function') {
+            setIcon(btnCircle, 'play');
+        } else {
+            btnCircle.setText('▶');
+        }
     }
 
     const detailsGrid = card.createDiv({ cls: 'slide-two-tasks-incomplete-tasks-container-details' });
@@ -718,7 +782,7 @@ const renderTaskCard = (container, taskEl, categoryName = "Uncategorized", class
         text: `Runtime: ${taskEl.runtimeSeconds != null ? taskEl.runtimeSeconds + 's' : 'N/A'}`
     });
 
-    attachTaskSelectionListener(card, taskEl.id, PLACE_ID.SILDE_TWO_NOT_COMPLPET_TASKS);
+    attachTaskSelectionListener(card, taskEl.id, PLACE_ID.SILDE_TWO_NOT_COMPLPET_TASKS, instance);
 
 
 
@@ -732,25 +796,69 @@ const slideTwo = (parentContainer, instance) => {
     const categories = fileData?.data?.category || fileData?.category || [];
     const uncategorizedTasks = fileData?.data?.notCategoriseTasks || fileData?.notCategoriseTasks || [];
 
+    let activeFilter = 'all';
+    const selectedBadgeNames = new Set();
+
+    const setBadgeActive = (badgeEl, isActive, color) => {
+        if (isActive) {
+            badgeEl.addClass('active-badge');
+            badgeEl.style.backgroundColor = color || 'var(--interactive-accent)';
+            badgeEl.style.color = 'var(--text-on-accent)';
+        } else {
+            badgeEl.removeClass('active-badge');
+            badgeEl.style.backgroundColor = '';
+            badgeEl.style.color = color || '';
+        }
+    };
+
     const renderTasks = () => {
         selectedTaskForTimeLine = [...categories, ...uncategorizedTasks];
         taskContainer.empty();
 
-        taskContainer.createDiv({ cls: 'slide-two-tasks-summery' });
+        const summaryEl = taskContainer.createDiv({ cls: 'slide-two-tasks-summery' });
+
+        const allTasks = [...categories.flatMap(e => e.Tasks || []), ...uncategorizedTasks];
+        const totalTasks = allTasks.length;
+        const completedTasks = allTasks.filter(e => e.completed).length;
+        const incompleteTasks = allTasks.filter(e => !e.completed).length;
+        const firstTask = uncategorizedTasks[0] || categories[0]?.Tasks?.[0] || null;
+
+        const addSummaryItem = (label, value, cls) => {
+            const item = summaryEl.createDiv({ cls: `slide-two-tasks-summery-item ${cls}` });
+            item.createSpan({ cls: 'slide-two-tasks-summery-label', text: label });
+            item.createSpan({ cls: 'slide-two-tasks-summery-value', text: String(value) });
+        };
+
+        addSummaryItem('Total', totalTasks, 'detail-total');
+        addSummaryItem('Done', completedTasks, 'detail-done');
+        addSummaryItem('Pending', incompleteTasks, 'detail-pending');
+        addSummaryItem('Categories', categories.length, 'detail-categories');
+        addSummaryItem('Uncategorized', uncategorizedTasks.length, 'detail-uncategorized');
+        addSummaryItem('Gap', firstTask?.gapTime || '5', 'detail-gap');
+
+        const visibleCategories = activeFilter === 'all'
+            ? categories
+            : activeFilter === 'categories'
+                ? categories.filter(e => selectedBadgeNames.has(e.Name))
+                : [];
+
+        const showUncategorized = activeFilter === 'all' || selectedBadgeNames.has('Uncategorized');
 
         // --- INCOMPLETE TASKS ---
         // Uncategorized Header & List
-        const hasUncatIncomplete = uncategorizedTasks.some(e => !e.completed);
-        const uncatHeaderCls = hasUncatIncomplete ? 'slide-two-tasks-incomplete-category-name' : 'slide-two-tasks-disable';
-        taskContainer.createDiv({ cls: uncatHeaderCls, text: "Uncategorized" });
+        if (showUncategorized) {
+            const hasUncatIncomplete = uncategorizedTasks.some(e => !e.completed);
+            const uncatHeaderCls = hasUncatIncomplete ? 'slide-two-tasks-incomplete-category-name' : 'slide-two-tasks-disable';
+            taskContainer.createDiv({ cls: uncatHeaderCls, text: "Uncategorized" });
 
-        uncategorizedTasks.filter(e => e.completed === false).forEach(e => {
-            renderTaskCard(taskContainer, e, "Uncategorized", 'slide-two-tasks-incomplete-tasks');
-            // attachTaskSelectionListener(e,e.id,PLACE_ID.SILDE_TWO_COMPLPET_TASKS)
-        });
+            uncategorizedTasks.filter(e => e.completed === false).forEach(e => {
+                renderTaskCard(taskContainer, e, "Uncategorized", 'slide-two-tasks-incomplete-tasks', instance);
+                // attachTaskSelectionListener(e,e.id,PLACE_ID.SILDE_TWO_COMPLPET_TASKS)
+            });
+        }
 
         // Category Headers & List (Incomplete)
-        categories.filter(e => e.selected === true).forEach(e => {
+        visibleCategories.forEach(e => {
             const incompleteTasks = (e?.Tasks || []).filter(f => f.completed === false);
             const catCls = incompleteTasks.length > 0 ? 'slide-two-tasks-incomplete-category-name' : 'slide-two-tasks-disable';
 
@@ -758,71 +866,124 @@ const slideTwo = (parentContainer, instance) => {
             // attachTaskSelectionListener(item, e.id, "::A::");
 
             incompleteTasks.forEach(f => {
-                renderTaskCard(taskContainer, f, e.Name, 'slide-two-tasks-incomplete-tasks');
+                renderTaskCard(taskContainer, f, e.Name, 'slide-two-tasks-incomplete-tasks', instance);
                 // attachTaskSelectionListener(item, e.id, "::A::");
             });
         });
 
-        taskContainer.createDiv({ cls: 'slide-two-tasks-colaps-btn' });
+        // Collapsible button that toggles the completed-tasks menu
+        const colapsBtn = taskContainer.createEl('button', {
+            cls: 'slide-two-tasks-colaps-btn',
+            text: '☰ Completed Tasks Menu'
+        });
+        const completedTasksMenu = taskContainer.createDiv({ cls: 'slide-two-tasks-completed-menu' });
+
+        colapsBtn.addEventListener('click', () => {
+            const isHidden = completedTasksMenu.classList.toggle('slide-two-tasks-completed-menu-hidden');
+            colapsBtn.setText(isHidden ? '☰ Completed Tasks Menu' : '▼ Completed Tasks Menu');
+        });
 
         // --- COMPLETED TASKS ---
         // Uncategorized Header & List
-        const hasUncatComplete = uncategorizedTasks.some(e => e.completed);
-        const uncatCompleteHeaderCls = hasUncatComplete ? 'slide-two-tasks-complete-category-name' : 'slide-two-tasks-disable';
-        taskContainer.createDiv({ cls: uncatCompleteHeaderCls, text: "Uncategorized" });
+        if (showUncategorized) {
+            const hasUncatComplete = uncategorizedTasks.some(e => e.completed);
+            const uncatCompleteHeaderCls = hasUncatComplete ? 'slide-two-tasks-complete-category-name' : 'slide-two-tasks-disable';
+            completedTasksMenu.createDiv({ cls: uncatCompleteHeaderCls, text: "Uncategorized" });
 
-        uncategorizedTasks.filter(e => e.completed === true).forEach(e => {
-            renderTaskCard(taskContainer, e, "Uncategorized", 'slide-two-tasks-complete-tasks');
-        });
+            uncategorizedTasks.filter(e => e.completed === true).forEach(e => {
+                renderTaskCard(completedTasksMenu, e, "Uncategorized", 'slide-two-tasks-complete-tasks', instance);
+            });
+        }
 
         // Category Headers & List (Completed)
-        categories.filter(e => e.selected === true).forEach(e => {
+        visibleCategories.forEach(e => {
             const completeTasks = (e?.Tasks || []).filter(f => f.completed === true);
             const catCls = completeTasks.length > 0 ? 'slide-two-tasks-complete-category-name' : 'slide-two-tasks-disable';
 
-            const item = taskContainer.createDiv({ cls: catCls, text: `• ${e.Name}` });
+            const item = completedTasksMenu.createDiv({ cls: catCls, text: `• ${e.Name}` });
             attachTaskSelectionListener(item, e.id, "::A::");
 
             completeTasks.forEach(f => {
-                renderTaskCard(taskContainer, f, e.Name, 'slide-two-tasks-complete-tasks');
+                renderTaskCard(completedTasksMenu, f, e.Name, 'slide-two-tasks-complete-tasks', instance);
             });
         });
     };
 
     instance.refreshSlideTwo = renderTasks;
 
-    categories.forEach(e => {
+    // All badge (permanent)
+    const allBadge = categoriesContainer.createDiv({ text: 'All', cls: 'slide-two-badges' });
+    allBadge.addEventListener('click', (evt) => {
+        evt.stopPropagation();
+
+        activeFilter = 'all';
+        selectedBadgeNames.clear();
+        renderTasks();
+        updateBadges();
+    });
+
+    // Uncategorized badge (permanent)
+    const uncatBadge = categoriesContainer.createDiv({ text: 'Uncategorized', cls: 'slide-two-badges' });
+    uncatBadge.addEventListener('click', (evt) => {
+        evt.stopPropagation();
+
+        if (activeFilter === 'all') {
+            activeFilter = 'categories';
+        }
+        if (selectedBadgeNames.has('Uncategorized')) {
+            selectedBadgeNames.delete('Uncategorized');
+        } else {
+            selectedBadgeNames.add('Uncategorized');
+        }
+
+        if (selectedBadgeNames.size === 0) {
+            activeFilter = 'all';
+        }
+
+        renderTasks();
+        updateBadges();
+    });
+
+    const catBadges = categories.map(e => {
         const badge = categoriesContainer.createDiv({ text: e.Name, cls: 'slide-two-badges' });
         badge.style.color = e.color;
         badge.style.borderColor = e.color;
-        if (e.selected) {
-            badge.addClass('active-badge');
-            badge.style.backgroundColor = 'var(--interactive-accent)';
-            badge.style.color = 'var(--text-on-accent)';
-        }
 
         badge.addEventListener('click', (evt) => {
             evt.stopPropagation();
 
-            e.selected = !e.selected;
-
-            if (e.selected) {
-                badge.addClass('active-badge');
-                badge.style.backgroundColor = e.color;
-                badge.style.color = "white";
-                if (e.id) selectedTaskIds.add(e.id);
+            if (activeFilter === 'all') {
+                activeFilter = 'categories';
+            }
+            if (selectedBadgeNames.has(e.Name)) {
+                selectedBadgeNames.delete(e.Name);
             } else {
-                badge.removeClass('active-badge');
-                badge.style.backgroundColor = '';
-                badge.style.color = '';
-                if (e.id) selectedTaskIds.delete(e.id);
+                selectedBadgeNames.add(e.Name);
+            }
+
+            if (selectedBadgeNames.size === 0) {
+                activeFilter = 'all';
             }
 
             renderTasks();
+            updateBadges();
         });
+
+        return badge;
     });
 
+    const updateBadges = () => {
+        setBadgeActive(allBadge, activeFilter === 'all');
+        setBadgeActive(uncatBadge, selectedBadgeNames.has('Uncategorized'));
+        catBadges.forEach((badge, i) => {
+            const e = categories[i];
+            const isActive = selectedBadgeNames.has(e.Name);
+            setBadgeActive(badge, isActive, e.color);
+        });
+    };
+
     renderTasks();
+    updateBadges();
 };
 
 const slideThree = (parentContainer, instance) => {
