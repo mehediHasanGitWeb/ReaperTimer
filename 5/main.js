@@ -37,6 +37,11 @@ const controlarEdit = (buttonGroup, instance) => {
         cls: 'controlar-input controlar-input-task'
     });
 
+    const taskNameError = formContainer.createDiv({
+        cls: 'controlar-error-msg',
+        text: 'Task Name is required.'
+    });
+
     // 2. Category Selector
     const rawCategories = fileData?.data?.category || fileData?.category || [];
     const categories = rawCategories.map(c => typeof c === 'string' ? c : c?.Name).filter(Boolean);
@@ -46,6 +51,21 @@ const controlarEdit = (buttonGroup, instance) => {
     const categorySelect = formContainer.createEl('select', { cls: 'controlar-select' });
     categories.forEach(catName => {
         categorySelect.createEl('option', { text: `Category: ${catName}`, value: catName });
+    });
+    categorySelect.createEl('option', { text: '＋ Custom Category...', value: '__custom__' });
+
+    const customCategoryInput = formContainer.createEl('input', {
+        type: 'text',
+        placeholder: 'New Category Name...',
+        cls: 'controlar-input controlar-input-custom-category'
+    });
+    customCategoryInput.addClass('controlar-error-msg-hidden');
+
+    categorySelect.addEventListener('change', () => {
+        const isCustom = categorySelect.value === '__custom__';
+        customCategoryInput.toggleClass('controlar-error-msg-hidden', !isCustom);
+        customCategoryInput.removeClass('controlar-input-error');
+        if (isCustom) customCategoryInput.focus();
     });
 
     // 3. Category / Task Color Picker Container
@@ -97,6 +117,18 @@ const controlarEdit = (buttonGroup, instance) => {
         cls: 'controlar-input'
     });
 
+    expiryTimeInput.addEventListener('input', () => {
+        expiryTimeInput.removeClass('controlar-input-error');
+        gapInput.removeClass('controlar-input-error');
+        expiryGapError.addClass('controlar-error-msg-hidden');
+    });
+
+    gapInput.addEventListener('input', () => {
+        expiryTimeInput.removeClass('controlar-input-error');
+        gapInput.removeClass('controlar-input-error');
+        expiryGapError.addClass('controlar-error-msg-hidden');
+    });
+
     const runtimeGapInput = formContainer.createEl('input', {
         type: 'number',
         placeholder: 'Runtime Gap (mins)...',
@@ -106,6 +138,11 @@ const controlarEdit = (buttonGroup, instance) => {
     const timeInput = formContainer.createEl('input', {
         type: 'time',
         cls: 'controlar-input controlar-time-input'
+    });
+
+    const expiryGapError = formContainer.createDiv({
+        cls: 'controlar-error-msg controlar-error-msg-hidden',
+        text: 'Fill in Expiry Time or Gap.'
     });
 
     // 8. Custom Color Toggle Checkbox
@@ -122,7 +159,9 @@ const controlarEdit = (buttonGroup, instance) => {
     // Click Event Handler
     saveBtn.addEventListener('click', async () => {
         const name = taskInput.value.trim();
-        const category = categorySelect.value;
+        const selectedCategory = categorySelect.value;
+        const customCategory = customCategoryInput.value.trim();
+        const category = selectedCategory === '__custom__' ? customCategory : selectedCategory;
         const color = categoryColorInput.value;
         const background = backGroundSelect.value;
         const alarmSound = alarmSoundSelect.value;
@@ -133,8 +172,29 @@ const controlarEdit = (buttonGroup, instance) => {
         const time = timeInput.value;
         const customColorEnabled = selectBox.checked;
 
+        taskInput.removeClass('controlar-input-error');
+        taskNameError.addClass('controlar-error-msg-hidden');
+        expiryTimeInput.removeClass('controlar-input-error');
+        gapInput.removeClass('controlar-input-error');
+        expiryGapError.addClass('controlar-error-msg-hidden');
+
         if (!name) {
-            alert('Please enter a task name.');
+            taskInput.addClass('controlar-input-error');
+            taskNameError.removeClass('controlar-error-msg-hidden');
+            taskInput.focus();
+            return;
+        }
+
+        if (!expiryTime && !gap) {
+            expiryTimeInput.addClass('controlar-input-error');
+            gapInput.addClass('controlar-input-error');
+            expiryGapError.removeClass('controlar-error-msg-hidden');
+            return;
+        }
+
+        if (selectedCategory === '__custom__' && !category) {
+            customCategoryInput.addClass('controlar-input-error');
+            customCategoryInput.focus();
             return;
         }
 
@@ -160,14 +220,14 @@ const controlarEdit = (buttonGroup, instance) => {
 
         if (category === 'Uncategorized') {
             targetData.notCategoriseTasks = targetData.notCategoriseTasks || [];
-            targetData.notCategoriseTasks.push(newTask);
+            targetData.notCategoriseTasks.unshift(newTask);
         } else {
             targetData.category = targetData.category || [];
             let catObj = targetData.category.find(c => (typeof c === 'string' ? c : c?.Name) === category);
             if (catObj && typeof catObj === 'object') {
                 catObj.color = color;
                 catObj.Tasks = catObj.Tasks || catObj.tasks || [];
-                catObj.Tasks.push(newTask);
+                catObj.Tasks.unshift(newTask);
             } else {
                 targetData.category.push({ Name: category, color: color, Tasks: [newTask] });
             }
@@ -182,9 +242,27 @@ const controlarEdit = (buttonGroup, instance) => {
         if (instance && typeof instance.refreshSlideTwo === 'function') {
             instance.refreshSlideTwo();
         }
+        if (instance && typeof instance.refreshSlideOne === 'function') {
+            instance.refreshSlideOne();
+        }
 
-        // Clean up input form
-        // formContainer.remove();
+        // Reset input form for next task
+        taskInput.value = '';
+        expiryTimeInput.value = '';
+        gapInput.value = '';
+        runtimeGapInput.value = '';
+        timeInput.value = '';
+        selectBox.checked = false;
+        customCategoryInput.value = '';
+        customCategoryInput.addClass('controlar-error-msg-hidden');
+        customCategoryInput.removeClass('controlar-input-error');
+        categorySelect.value = 'Uncategorized';
+        taskInput.removeClass('controlar-input-error');
+        taskNameError.addClass('controlar-error-msg-hidden');
+        expiryTimeInput.removeClass('controlar-input-error');
+        gapInput.removeClass('controlar-input-error');
+        expiryGapError.addClass('controlar-error-msg-hidden');
+        taskInput.focus();
     });
 };
 
@@ -328,6 +406,9 @@ const attachTaskSelectionListener = (taskEl, taskId, place, instance) => {
                         if (instance && typeof instance.refreshSlideTwo === 'function') {
                             instance.refreshSlideTwo();
                         }
+                        if (instance && typeof instance.refreshSlideOne === 'function') {
+                            instance.refreshSlideOne();
+                        }
                     });
                 }
             }
@@ -352,6 +433,9 @@ const slideOneClock = (parentContainer, instance) => {
     };
 
     updateClock();
+    if (instance.clockInterval) {
+        clearInterval(instance.clockInterval);
+    }
     instance.clockInterval = setInterval(updateClock, 1000);
 }
 
@@ -387,6 +471,57 @@ const slideOneGanntChart = (parentContainer, instance) => {
             text: "a"
         });
     }
+
+    // Every second: prepend a new tasks row (with 120 fonts) at the top of the
+    // page and animate it scrolling down. When it reaches the bottom, the
+    // bottom-most row is deleted.
+    let ganntScrollAnim = null;
+    const animateScrollToBottom = (onDone) => {
+        if (ganntScrollAnim) {
+            cancelAnimationFrame(ganntScrollAnim);
+        }
+        const start = ganntChartPage.scrollTop;
+        const target = ganntChartPage.scrollHeight;
+        const startTime = performance.now();
+        const duration = 900;
+        const step = (now) => {
+            const progress = Math.min(1, (now - startTime) / duration);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            ganntChartPage.scrollTop = start + (target - start) * eased;
+            if (progress < 1) {
+                ganntScrollAnim = requestAnimationFrame(step);
+            } else {
+                ganntScrollAnim = null;
+                if (typeof onDone === 'function') onDone();
+            }
+        };
+        ganntScrollAnim = requestAnimationFrame(step);
+    };
+
+    const cyclePage = () => {
+        const newRow = ganntChartPage.createDiv({
+            cls: 'slide-one-clock-part-gantt-chart-page-tasks'
+        });
+        for (let i = 0; i < 120; i++) {
+            newRow.createDiv({
+                cls: 'slide-one-clock-part-gantt-chart-page-tasks-fonts',
+                text: "a"
+            });
+        }
+        if (ganntChartPage.firstChild) {
+            ganntChartPage.insertBefore(newRow, ganntChartPage.firstChild);
+        }
+        animateScrollToBottom(() => {
+            if (ganntChartPage.lastChild && ganntChartPage.lastChild !== newRow) {
+                ganntChartPage.lastChild.remove();
+            }
+        });
+    };
+
+    if (instance.ganntInterval) {
+        clearInterval(instance.ganntInterval);
+    }
+    instance.ganntInterval = setInterval(cyclePage, 1000);
 
     // Toggle expand state on click
     let isExpanded = false;
@@ -508,9 +643,9 @@ const nnnnnnnnnnnnnslideOneGanntChart = (parentContainer, instance) => {
 
 const slideOneEndTimeLine = (parentContainer, instance) => {
     const clockPartEndTimeLine = parentContainer
-        .createDiv({ cls: 'slide-one-clock-part-end-time-line' })
-        .createDiv({ cls: 'slide-one-clock-part-end-time-line-scroll-bar' });
+        .createDiv({ cls: 'slide-one-clock-part-end-time-line' });
 
+    // Control bar sits ABOVE the end timeline
     const endTimeLineControls = clockPartEndTimeLine.createDiv({
         cls: 'slide-one-clock-part-end-time-line-scroll-bar-control'
     });
@@ -538,46 +673,160 @@ const slideOneEndTimeLine = (parentContainer, instance) => {
     const endTimeLineControlsRange = endTimeLineControls.createDiv({
         cls: 'slide-one-clock-part-end-time-line-scroll-bar-control-range-bar'
     });
-    endTimeLineControlsRange.createDiv({ text: "r1" });
-    endTimeLineControlsRange.createDiv({ text: "r2" });
-    endTimeLineControlsRange.createDiv({ text: "r3" });
 
-    const endTimeLineBarLine = clockPartEndTimeLine.createDiv({
+    // r1: square magnifying glass showing all task details (zoomed)
+    const endTimeLineControlsRangeGlass = endTimeLineControlsRange.createDiv({
+        cls: 'slide-one-clock-part-end-time-line-range-bar-glass'
+    });
+    const endTimeLineControlsRangeGlassViewport = endTimeLineControlsRangeGlass.createDiv({
+        cls: 'slide-one-clock-part-end-time-line-range-bar-glass-viewport'
+    });
+
+    // r2: point indicator showing current position in the timeline
+    const endTimeLineControlsRangePoint = endTimeLineControlsRange.createDiv({
+        cls: 'slide-one-clock-part-end-time-line-range-bar-point'
+    });
+
+    // r3: scrollable handle to drag through the timeline
+    const endTimeLineControlsRangeHandle = endTimeLineControlsRange.createDiv({
+        cls: 'slide-one-clock-part-end-time-line-range-bar-handle'
+    });
+    const endTimeLineControlsRangeHandleTrack = endTimeLineControlsRangeHandle.createDiv({
+        cls: 'slide-one-clock-part-end-time-line-range-bar-handle-track'
+    });
+    const endTimeLineControlsRangeHandleThumb = endTimeLineControlsRangeHandleTrack.createDiv({
+        cls: 'slide-one-clock-part-end-time-line-range-bar-handle-thumb'
+    });
+
+    const scrollRange = (percent) => {
+        const viewport = endTimeLineControlsRangeGlassViewport;
+        const scrollable = viewport.scrollHeight - viewport.clientHeight;
+        const p = Math.max(0, Math.min(1, percent));
+        viewport.style.transform = `translateY(${-scrollable * p}px)`;
+        endTimeLineControlsRangePoint.style.top = `calc(${p * 100}% - 6px)`;
+        const maxThumb = endTimeLineControlsRangeHandleTrack.clientHeight - endTimeLineControlsRangeHandleThumb.offsetHeight;
+        endTimeLineControlsRangeHandleThumb.style.top = `${Math.max(0, maxThumb * p)}px`;
+    };
+
+    const setRangeFromClientY = (clientY) => {
+        const rect = endTimeLineControlsRangeHandleTrack.getBoundingClientRect();
+        const percent = rect.height > 0 ? (clientY - rect.top) / rect.height : 0;
+        scrollRange(percent);
+    };
+
+    endTimeLineControlsRangeHandleTrack.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        endTimeLineControlsRangeHandleTrack.setPointerCapture(e.pointerId);
+        setRangeFromClientY(e.clientY);
+    });
+    endTimeLineControlsRangeHandleTrack.addEventListener('pointermove', (e) => {
+        if (endTimeLineControlsRangeHandleTrack.hasPointerCapture(e.pointerId)) {
+            setRangeFromClientY(e.clientY);
+        }
+    });
+    endTimeLineControlsRangeHandleTrack.addEventListener('pointerup', (e) => {
+        endTimeLineControlsRangeHandleTrack.releasePointerCapture(e.pointerId);
+    });
+
+    // The end timeline (line + tasks) lives below the control bar
+    const clockPartEndTimeLineScrollBar = clockPartEndTimeLine.createDiv({
+        cls: 'slide-one-clock-part-end-time-line-scroll-bar'
+    });
+
+    const endTimeLineBarLine = clockPartEndTimeLineScrollBar.createDiv({
         cls: 'slide-one-clock-part-end-time-line-scroll-bar-line'
     });
-    const endTimeLineBarTask = clockPartEndTimeLine.createDiv({
+    const endTimeLineBarTask = clockPartEndTimeLineScrollBar.createDiv({
         cls: 'slide-one-clock-part-end-time-line-scroll-bar-tasks'
     });
 
-    // Gather all tasks safely into a single array
-    const activeData = fileData?.data || fileData || {};
-    const uncategorized = activeData.notCategoriseTasks || activeData.notCategoriseTasksInComplete || [];
-    const categories = activeData.category || [];
+    const renderEndTimeLine = () => {
+        endTimeLineBarLine.empty();
+        endTimeLineBarTask.empty();
+        endTimeLineControlsRangeGlassViewport.empty();
 
-    const allTasks = [];
+        // Gather ALL tasks (complete + incomplete) safely into a single array
+        const activeData = fileData?.data || fileData || {};
+        const uncategorized = activeData.notCategoriseTasks || activeData.notCategoriseTasksInComplete || [];
+        const categories = activeData.category || [];
 
-    // Add uncategorized tasks
-    uncategorized.forEach(task => {
-        allTasks.push({ task, catName: 'Uncategorized' });
-    });
+        const allTasks = [];
 
-    // Add category tasks
-    categories.forEach(cat => {
-        const catName = typeof cat === 'string' ? cat : (cat.Name || 'Category');
-        const tasks = cat.Tasks || [];
-        tasks.forEach(task => {
-            allTasks.push({ task, catName });
+        uncategorized.forEach(task => {
+            if (!task) return;
+            allTasks.push({ task, catName: 'Uncategorized', completed: !!(task.completed || task.isCompleted) });
         });
-    });
 
-    // Render safely without out-of-bounds array access
-    allTasks.forEach(({ task, catName }) => {
-        const desc = typeof task === 'string' ? task : (task?.description || task?.Name || 'Unnamed Task');
-        endTimeLineBarLine.createDiv({
-            text: `task: ${desc} | cat: ${catName}`
+        categories.forEach(cat => {
+            const catName = typeof cat === 'string' ? cat : (cat.Name || 'Category');
+            (cat.Tasks || []).forEach(task => {
+                if (!task) return;
+                allTasks.push({ task, catName, completed: !!(task.completed || task.isCompleted) });
+            });
         });
-        endTimeLineBarTask.createDiv({ text: "t1" });
-    });
+
+        // Every task gets a dot on the end-time line; finished tasks (including
+        // tasks finished during gap time) use the green complete dot, all other
+        // tasks use the red dot and are styled red.
+        allTasks.forEach(({ task, catName, completed }) => {
+            const desc = typeof task === 'string' ? task : (task?.description || task?.Name || 'Unnamed Task');
+
+            endTimeLineBarLine.createDiv({
+                cls: completed
+                    ? 'slide-one-clock-part-end-time-line-task-dot-complete'
+                    : 'slide-one-clock-part-end-time-line-task-dot',
+                text: '•'
+            });
+
+            const taskRow = endTimeLineBarTask.createDiv({ cls: 'slide-one-clock-part-end-time-line-task-row' });
+            const badgeColor = getTaskCategoryColor(task, catName);
+            const badge = taskRow.createDiv({ cls: 'slide-one-clock-part-end-time-line-task-badge' });
+            badge.setText(catName);
+            badge.style.backgroundColor = badgeColor;
+            badge.style.color = badgeColor === '#ffffff' ? '#000000' : '#ffffff';
+            taskRow.createDiv({
+                cls: completed
+                    ? 'slide-one-clock-part-end-time-line-task-complete'
+                    : 'slide-one-clock-part-end-time-line-task-incomplete',
+                text: desc
+            });
+
+            // Mirror every task's full details inside the magnifier glass
+            const glassRow = endTimeLineControlsRangeGlassViewport.createDiv({ cls: 'slide-one-clock-part-end-time-line-range-bar-glass-row' });
+            const glassBadge = glassRow.createDiv({ cls: 'slide-one-clock-part-end-time-line-range-bar-glass-badge' });
+            glassBadge.setText(catName);
+            glassBadge.style.backgroundColor = badgeColor;
+            glassBadge.style.color = badgeColor === '#ffffff' ? '#000000' : '#ffffff';
+            const glassInfo = glassRow.createDiv({
+                cls: completed
+                    ? 'slide-one-clock-part-end-time-line-range-bar-glass-task-complete'
+                    : 'slide-one-clock-part-end-time-line-range-bar-glass-task-incomplete'
+            });
+
+            const details = [
+                ['name', task?.name || task?.title || desc],
+                ['desc', desc],
+                ['cat', catName],
+                ['time', task?.time],
+                ['expiry', task?.expiryTime != null ? `${task.expiryTime}m` : null],
+                ['gap', task?.gap != null ? `${task.gap}m` : (task?.gapTime != null ? `${task.gapTime}m` : null)],
+                ['runtimeGap', task?.runtimeGap != null ? `${task.runtimeGap}m` : null],
+                ['alarm', task?.alarmSound],
+                ['ambient', task?.ambientSound],
+                ['bg', task?.background]
+            ];
+            const detailText = details
+                .filter(d => d[1] != null && String(d[1]).trim() !== '')
+                .map(d => `${d[0]}: ${d[1]}`)
+                .join(' | ');
+            glassInfo.setText(completed ? `[done] ${detailText}` : `[pending] ${detailText}`);
+        });
+
+        scrollRange(0);
+    };
+
+    renderEndTimeLine();
+    instance.refreshEndTimeLine = renderEndTimeLine;
 };
 
 
@@ -607,8 +856,10 @@ const getIncompleteTasksWithCategory = (data) => {
     };
 
     // 1. Collect Uncategorized Incomplete Tasks
-    const uncategorized = data?.notCategoriseTasksInComplete || data?.notCategoriseTasks || [];
-    uncategorized.forEach(task => pushTask(task, 'Uncategorized'));
+    const uncategorized = data?.notCategoriseTasksInComplete || data?.data?.notCategoriseTasks || data?.notCategoriseTasks || [];
+    uncategorized
+        .filter(t => !t.completed && !t.isCompleted)
+        .forEach(task => pushTask(task, 'Uncategorized'));
 
     // 2. Collect Incomplete Tasks from Categories
     const categories = data?.data?.category || data?.category || [];
@@ -628,6 +879,77 @@ const getIncompleteTasksWithCategory = (data) => {
 };
 
 
+// --- Timeline per-task countdown timer helpers ---
+
+const getExpiredMinutes = (task) => {
+    if (!task) return null;
+    if (task.expiryTime != null && !isNaN(Number(task.expiryTime)) && Number(task.expiryTime) > 0) {
+        return { type: 'duration', minutes: Number(task.expiryTime) };
+    }
+    const raw = task.expiredTime;
+    if (raw == null || raw === '' || String(raw).trim().toLowerCase() === 'never') return null;
+    const s = String(raw).trim().toLowerCase();
+    const durMatch = s.match(/^(\d+(?:\.\d+)?)\s*(m|min|mins|minute|minutes)?$/);
+    if (durMatch) {
+        return { type: 'duration', minutes: parseFloat(durMatch[1]) };
+    }
+    const clockMatch = s.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?$/);
+    if (clockMatch) {
+        let h = parseInt(clockMatch[1], 10);
+        const minute = parseInt(clockMatch[2], 10);
+        const ampm = clockMatch[3];
+        if (ampm === 'pm' && h < 12) h += 12;
+        if (ampm === 'am' && h === 12) h = 0;
+        return { type: 'clock', hour: h, minute: minute };
+    }
+    return null;
+};
+
+const getGapMinutes = (task) => {
+    if (!task) return null;
+    const gap = task.gap != null && !isNaN(Number(task.gap)) ? Number(task.gap)
+        : (task.gapTime != null && String(task.gapTime).trim() !== '' && !isNaN(Number(task.gapTime)) ? Number(task.gapTime) : null);
+    return gap != null && gap > 0 ? gap : null;
+};
+
+const getTimerMode = (task) => {
+    const hasExpired = getExpiredMinutes(task) != null;
+    const hasGap = getGapMinutes(task) != null;
+    if (hasExpired && hasGap) return 'gapCycleUntilDeadline';
+    if (hasExpired) return 'expiredTimer';
+    if (hasGap) return 'gapCycle';
+    return 'none';
+};
+
+const getTimerDurationSeconds = (task, mode) => {
+    if (mode === 'expiredTimer') {
+        const e = getExpiredMinutes(task);
+        if (e && e.type === 'duration') return e.minutes * 60;
+        return null; // clock-time expiry counts down to the deadline instead
+    }
+    const gap = getGapMinutes(task);
+    if (gap != null && gap > 0) return gap * 60;
+    return null;
+};
+
+const formatCountdown = (seconds) => {
+    if (seconds == null || seconds <= 0) return '00:00';
+    const s = Math.floor(seconds % 60);
+    const m = Math.floor((seconds / 60) % 60);
+    const h = Math.floor(seconds / 3600);
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+};
+
+const getTaskCategoryColor = (task, categoryName) => {
+    if (task && task.color) return task.color;
+    const categories = fileData?.data?.category || fileData?.category || [];
+    const cat = categories.find(c => typeof c === 'string' ? c === categoryName : c?.Name === categoryName);
+    return (cat && cat.color) || '#ffffff';
+};
+
+
 const slideOneTimeLine = (parentContainer, instance) => {
     const timeline = parentContainer
         .createEl('div', { cls: 'slide-one-time-line' })
@@ -635,19 +957,217 @@ const slideOneTimeLine = (parentContainer, instance) => {
 
     const taskList = timeline.createDiv({ cls: 'slide-one-time-line-task-list' });
 
+    const collectTasks = () => {
+        // Take slide 2's incomplete tasks directly from the live data,
+        // mirroring exactly what slideTwo.renderTasks() displays.
+        const incompleteTasks = [];
+        const seenIds = new Set();
+
+        const pushTask = (task, categoryName, parentList) => {
+            if (!task || task.completed || task.isCompleted) return;
+            if (task.id != null) {
+                if (seenIds.has(task.id)) return;
+                seenIds.add(task.id);
+            }
+            incompleteTasks.push({
+                ...(typeof task === 'object' ? task : { description: task }),
+                categoryName: categoryName,
+                sourceTask: task,
+                parentList: parentList
+            });
+        };
+
+        // Respect slide 2's active badge filter so the timeline stays in sync
+        const filter = instance?.slideTwoFilter || {};
+        const activeFilter = filter.activeFilter || 'all';
+        const selectedBadgeNames = filter.selectedBadgeNames || new Set();
+        const showUncategorized = activeFilter === 'all' || selectedBadgeNames.has('Uncategorized');
+
+        const categories = fileData?.data?.category || fileData?.category || [];
+        const visibleCategories = activeFilter === 'all'
+            ? categories
+            : activeFilter === 'categories'
+                ? categories.filter(cat => selectedBadgeNames.has(typeof cat === 'string' ? cat : cat.Name))
+                : [];
+
+        if (showUncategorized) {
+            const uncategorizedTasks = fileData?.data?.notCategoriseTasks || fileData?.notCategoriseTasks || [];
+            uncategorizedTasks.forEach(task => pushTask(task, 'Uncategorized', uncategorizedTasks));
+        }
+
+        visibleCategories.forEach(cat => {
+            const categoryName = typeof cat === 'string' ? cat : (cat.Name || cat.categoryName || 'Uncategorized');
+            const catTaskList = cat.Tasks || cat.tasks || [];
+            catTaskList.forEach(task => pushTask(task, categoryName, catTaskList));
+        });
+
+        return incompleteTasks;
+    };
+
+    if (!instance.taskTimers) {
+        instance.taskTimers = {};
+    }
+
+    const ensureTimers = (tasks) => {
+        tasks.forEach(w => {
+            const t = w.sourceTask;
+            const mode = getTimerMode(t);
+            const dur = getTimerDurationSeconds(t, mode);
+            let entry = instance.taskTimers[t.id];
+            if (!entry) {
+                entry = { startedAt: Date.now(), durationSeconds: dur, mode };
+                instance.taskTimers[t.id] = entry;
+            } else if (entry.mode !== mode || entry.durationSeconds !== dur) {
+                entry.mode = mode;
+                entry.durationSeconds = dur;
+                entry.startedAt = Date.now();
+            }
+
+            // "gap cycle until deadline": keep one persistent expiry deadline
+            if (mode === 'gapCycleUntilDeadline' && !t.timerDeadline) {
+                const e = getExpiredMinutes(t);
+                if (e && e.type === 'clock') {
+                    const now = new Date();
+                    const dl = new Date(now.getFullYear(), now.getMonth(), now.getDate(), e.hour, e.minute);
+                    t.timerDeadline = dl.getTime();
+                } else if (e) {
+                    t.timerDeadline = Date.now() + e.minutes * 60000;
+                }
+            }
+            // pure clock-time expiry counts down to the deadline
+            if (mode === 'expiredTimer' && dur == null && !entry.deadline) {
+                const e = getExpiredMinutes(t);
+                if (e && e.type === 'clock') {
+                    const now = new Date();
+                    const dl = new Date(now.getFullYear(), now.getMonth(), now.getDate(), e.hour, e.minute);
+                    entry.deadline = dl.getTime();
+                }
+            }
+        });
+    };
+
+    const remainingSeconds = (entry) => {
+        if (!entry) return null;
+        if (entry.deadline != null) return (entry.deadline - Date.now()) / 1000;
+        if (entry.durationSeconds != null && entry.durationSeconds > 0) {
+            return entry.durationSeconds - (Date.now() - entry.startedAt) / 1000;
+        }
+        return null;
+    };
+
+    const fillPercent = (entry) => {
+        if (!entry) return 0;
+        const now = Date.now();
+        let totalMs;
+        if (entry.deadline != null) {
+            totalMs = entry.deadline - entry.startedAt;
+        } else if (entry.durationSeconds != null && entry.durationSeconds > 0) {
+            totalMs = entry.durationSeconds * 1000;
+        } else {
+            return 0;
+        }
+        if (totalMs <= 0) return 0;
+        return Math.max(0, Math.min(100, ((now - entry.startedAt) / totalMs) * 100));
+    };
+
+    const handleTimerExpired = (w, entry) => {
+        const t = w.sourceTask;
+        if (entry.mode === 'none') return false;
+
+        // expired-only task: complete and stop
+        if (entry.mode === 'expiredTimer') {
+            t.completed = true;
+            delete instance.taskTimers[t.id];
+            return true;
+        }
+
+        // gap cycle until deadline: once the expiry deadline has passed, stay completed
+        if (entry.mode === 'gapCycleUntilDeadline' && t.timerDeadline && Date.now() >= t.timerDeadline) {
+            t.completed = true;
+            delete instance.taskTimers[t.id];
+            return true;
+        }
+
+        // complete the current task and generate an identical new one
+        t.completed = true;
+        const newTask = { ...t };
+        newTask.id = Date.now().toString() + '-' + Math.floor(Math.random() * 100000);
+        newTask.completed = false;
+        const parentList = w.parentList;
+        const idx = parentList ? parentList.indexOf(t) : -1;
+        if (idx >= 0) parentList.splice(idx + 1, 0, newTask);
+        else if (parentList) parentList.push(newTask);
+        delete instance.taskTimers[t.id];
+        return true;
+    };
+
     const renderTimeLine = () => {
-        selectedTaskForTimeLine = getIncompleteTasksWithCategory(fileData);
+        let tasks = collectTasks();
+
+        ensureTimers(tasks);
+
+        let persisted = false;
+        tasks.forEach(w => {
+            const t = w.sourceTask;
+            const entry = instance.taskTimers[t.id];
+            if (!entry) return;
+            const deadlinePassed = entry.mode === 'gapCycleUntilDeadline' && t.timerDeadline && Date.now() >= t.timerDeadline;
+            const remaining = remainingSeconds(entry);
+            if (deadlinePassed || (remaining != null && remaining <= 0)) {
+                if (handleTimerExpired(w, entry)) persisted = true;
+            }
+        });
+
+        if (persisted) {
+            if (instance.plugin && typeof instance.plugin.saveData === 'function') {
+                instance.plugin.saveData(fileData);
+            }
+            if (instance && typeof instance.refreshSlideTwo === 'function') {
+                instance.refreshSlideTwo();
+            }
+            // Re-collect so regenerated tasks appear immediately
+            tasks = collectTasks();
+            ensureTimers(tasks);
+        }
+
+        // Drop timer state for tasks that no longer need it (e.g. completed)
+        const activeIds = new Set(tasks.map(w => w.sourceTask.id));
+        Object.keys(instance.taskTimers).forEach(id => {
+            if (!activeIds.has(id)) delete instance.taskTimers[id];
+        });
+
+        selectedTaskForTimeLine = tasks;
         taskList.empty();
 
         const globalTaskId = fileData?.data?.globalTasks?.id;
 
         if (selectedTaskForTimeLine && selectedTaskForTimeLine.length > 0) {
             selectedTaskForTimeLine.forEach((task) => {
+                const entry = instance.taskTimers[task.id];
+                const remaining = remainingSeconds(entry);
+
+                // Filter: only show tasks finishing within [now, now + rangeFilter]
+                if (rangeFilter != null) {
+                    if (remaining == null || remaining <= 0 || remaining > rangeFilter) {
+                        return;
+                    }
+                }
+
                 const taskCls = task.id === globalTaskId
                     ? 'slide-one-time-line-task-global-task'
                     : 'slide-one-time-line-task';
                 const taskEl = taskList.createEl('div', { cls: taskCls });
-                taskEl.setText(`[${task.categoryName}] ${task.description || task.title || 'Task'}${task.id}`);
+
+                const pipeWrap = taskEl.createDiv({ cls: 'slide-one-time-line-task-pipe-wrap' });
+                const pipeEl = pipeWrap.createDiv({ cls: 'slide-one-time-line-task-pipe' });
+                const fillEl = pipeEl.createDiv({ cls: 'slide-one-time-line-task-pipe-fill' });
+                fillEl.style.backgroundColor = getTaskCategoryColor(task, task.categoryName);
+                fillEl.style.width = fillPercent(entry) + '%';
+                const timerEl = pipeWrap.createDiv({ cls: 'slide-one-time-line-task-timer' });
+                timerEl.setText(remaining != null ? formatCountdown(remaining) : '–');
+
+                const taskText = taskEl.createDiv({ cls: 'slide-one-time-line-task-text' });
+                taskText.setText(`[${task.categoryName}] ${task.description || task.title || 'Task'}`);
 
                 // Attach selection listener passing the actual task's ID
                 attachTaskSelectionListener(taskEl, task.id, PLACE_ID.SILDE_ONE_TIME_LINE, instance);
@@ -657,13 +1177,46 @@ const slideOneTimeLine = (parentContainer, instance) => {
         }
     };
 
+    let rangeFilter = null;
+
     renderTimeLine();
 
     const timeLineRange = timeline.createDiv({ cls: "slide-one-time-line-range" });
-    timeLineRange.createDiv({ text: 'rangeLabel', cls: "lide-one-time-line-range-label" });
-    timeLineRange.createDiv({ text: 'rangescroll', cls: "slide-one-time-line-range-scroll" });
+    const rangeLabel = timeLineRange.createEl('label', {
+        text: 'rangeLabel',
+        cls: "lide-one-time-line-range-label",
+        attr: { for: 'slide-one-time-line-range-scroll-input' }
+    });
+    const rangeScrollInput = timeLineRange.createEl('input', {
+        type: 'number',
+        min: '0',
+        step: '1',
+        placeholder: 'seconds',
+        cls: "slide-one-time-line-range-scroll",
+        attr: { id: 'slide-one-time-line-range-scroll-input' }
+    });
 
-    instance.refreshSlideOne = renderTimeLine;
+    rangeScrollInput.addEventListener('input', () => {
+        const val = Number(rangeScrollInput.value);
+        rangeFilter = (Number.isFinite(val) && val > 0) ? val : null;
+        renderTimeLine();
+    });
+
+    instance.refreshSlideOne = () => {
+        renderTimeLine();
+        if (instance && typeof instance.refreshEndTimeLine === 'function') {
+            instance.refreshEndTimeLine();
+        }
+    };
+
+    if (instance.timelineInterval) {
+        clearInterval(instance.timelineInterval);
+    }
+    instance.timelineInterval = setInterval(() => {
+        if (instance && typeof instance.refreshSlideOne === 'function') {
+            instance.refreshSlideOne();
+        }
+    }, 1000);
 
 };
 
@@ -735,6 +1288,9 @@ const renderTaskCard = (container, taskEl, categoryName = "Uncategorized", class
             }
             if (instance && typeof instance.refreshSlideTwo === 'function') {
                 instance.refreshSlideTwo();
+            }
+            if (instance && typeof instance.refreshSlideOne === 'function') {
+                instance.refreshSlideOne();
             }
         });
     } else {
@@ -812,7 +1368,7 @@ const slideTwo = (parentContainer, instance) => {
     };
 
     const renderTasks = () => {
-        selectedTaskForTimeLine = [...categories, ...uncategorizedTasks];
+        const selectedTasks = [...categories, ...uncategorizedTasks];
         taskContainer.empty();
 
         const summaryEl = taskContainer.createDiv({ cls: 'slide-two-tasks-summery' });
@@ -909,68 +1465,98 @@ const slideTwo = (parentContainer, instance) => {
         });
     };
 
-    instance.refreshSlideTwo = renderTasks;
-
-    // All badge (permanent)
-    const allBadge = categoriesContainer.createDiv({ text: 'All', cls: 'slide-two-badges' });
-    allBadge.addEventListener('click', (evt) => {
-        evt.stopPropagation();
-
-        activeFilter = 'all';
-        selectedBadgeNames.clear();
+    instance.refreshSlideTwo = () => {
         renderTasks();
-        updateBadges();
-    });
+        renderBadges();
+    };
 
-    // Uncategorized badge (permanent)
-    const uncatBadge = categoriesContainer.createDiv({ text: 'Uncategorized', cls: 'slide-two-badges' });
-    uncatBadge.addEventListener('click', (evt) => {
-        evt.stopPropagation();
+    let allBadge, uncatBadge, catBadges;
 
-        if (activeFilter === 'all') {
-            activeFilter = 'categories';
+    const syncFilterToInstance = () => {
+        if (instance) {
+            instance.slideTwoFilter = {
+                activeFilter: activeFilter,
+                selectedBadgeNames: new Set(selectedBadgeNames)
+            };
         }
-        if (selectedBadgeNames.has('Uncategorized')) {
-            selectedBadgeNames.delete('Uncategorized');
-        } else {
-            selectedBadgeNames.add('Uncategorized');
-        }
+    };
 
-        if (selectedBadgeNames.size === 0) {
+    const refreshSlideOne = () => {
+        if (instance && typeof instance.refreshSlideOne === 'function') {
+            instance.refreshSlideOne();
+        }
+    };
+
+    const renderBadges = () => {
+        categoriesContainer.empty();
+
+        const makeBadge = (text, onClick) => {
+            const badge = categoriesContainer.createDiv({ text, cls: 'slide-two-badges' });
+            badge.addEventListener('click', (evt) => {
+                evt.stopPropagation();
+                onClick();
+                renderTasks();
+                updateBadges();
+                syncFilterToInstance();
+                refreshSlideOne();
+            });
+            return badge;
+        };
+
+        // All badge (permanent)
+        allBadge = makeBadge('All', () => {
             activeFilter = 'all';
-        }
+            selectedBadgeNames.clear();
+        });
 
-        renderTasks();
-        updateBadges();
-    });
-
-    const catBadges = categories.map(e => {
-        const badge = categoriesContainer.createDiv({ text: e.Name, cls: 'slide-two-badges' });
-        badge.style.color = e.color;
-        badge.style.borderColor = e.color;
-
-        badge.addEventListener('click', (evt) => {
-            evt.stopPropagation();
-
+        // Uncategorized badge (permanent)
+        uncatBadge = makeBadge('Uncategorized', () => {
             if (activeFilter === 'all') {
                 activeFilter = 'categories';
             }
-            if (selectedBadgeNames.has(e.Name)) {
-                selectedBadgeNames.delete(e.Name);
+            if (selectedBadgeNames.has('Uncategorized')) {
+                selectedBadgeNames.delete('Uncategorized');
             } else {
-                selectedBadgeNames.add(e.Name);
+                selectedBadgeNames.add('Uncategorized');
             }
-
             if (selectedBadgeNames.size === 0) {
                 activeFilter = 'all';
             }
-
-            renderTasks();
-            updateBadges();
         });
 
-        return badge;
-    });
+        // Category badges (rebuilt so new categories appear)
+        catBadges = categories.map(e => {
+            const badge = categoriesContainer.createDiv({ text: e.Name, cls: 'slide-two-badges' });
+            badge.style.color = e.color;
+            badge.style.borderColor = e.color;
+
+            badge.addEventListener('click', (evt) => {
+                evt.stopPropagation();
+
+                if (activeFilter === 'all') {
+                    activeFilter = 'categories';
+                }
+                if (selectedBadgeNames.has(e.Name)) {
+                    selectedBadgeNames.delete(e.Name);
+                } else {
+                    selectedBadgeNames.add(e.Name);
+                }
+
+                if (selectedBadgeNames.size === 0) {
+                    activeFilter = 'all';
+                }
+
+                renderTasks();
+                updateBadges();
+                syncFilterToInstance();
+                refreshSlideOne();
+            });
+
+            return badge;
+        });
+
+        updateBadges();
+    };
 
     const updateBadges = () => {
         setBadgeActive(allBadge, activeFilter === 'all');
@@ -983,7 +1569,8 @@ const slideTwo = (parentContainer, instance) => {
     };
 
     renderTasks();
-    updateBadges();
+    renderBadges();
+    syncFilterToInstance();
 };
 
 const slideThree = (parentContainer, instance) => {
@@ -1272,6 +1859,13 @@ class SlidingModalWithClock extends Modal {
             clearInterval(this.clockInterval);
             this.clockInterval = null;
         }
+
+        if (this.timelineInterval) {
+            clearInterval(this.timelineInterval);
+            this.timelineInterval = null;
+        }
+
+        this.taskTimers = null;
 
         const { contentEl } = this;
         contentEl.empty();
