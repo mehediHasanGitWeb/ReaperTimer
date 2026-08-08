@@ -122,7 +122,7 @@
   background-color: #f1f1f1;
   border: 1px solid black;
   padding: 0px;
-  width: 500px;
+  /* width: 600px; */
   display: grid;
   grid-template-rows: 1fr 1fr;
   height: 350px;
@@ -132,7 +132,7 @@
   background-color: #d3be06;
   border: 1px solid black;
   padding: 10px;
-   -size: 30px;
+  
   text-align: center;
   display: grid;
   grid-auto-rows: 1fr;
@@ -241,7 +241,7 @@
   background-color: #02c5bbec;
   border: 1px solid black;
   padding: 10px;
-   -size: 30px;
+ 
   text-align: center;
   display: grid;
   height: 200px;
@@ -252,7 +252,7 @@
   background-color: #c502a5ec;
   border: 1px solid black;
   padding: 5px;
-   -size: 30px;
+
   text-align: center;
   display: flex;
   align-items: center;
@@ -266,7 +266,7 @@
   background-color: #0e000bec;
   border: 1px solid black;
   padding: 5px;
-   -size: 30px;
+   
   text-align: center;
   color: #fff;
   height: 40px;
@@ -278,7 +278,7 @@
   background-color: #06d321;
   border: 1px solid black;
   padding: 10px;
-   -size: 30px;
+
   text-align: center;
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
@@ -516,17 +516,26 @@
   background-color: #d3066c;
   border: 1px solid black;
   padding: 10px;
-   -size: 30px;
+  
   text-align: center;
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
+}
+
+.slide-one-clock-part-global-colck-clock {
+  padding: 4px;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.slide-one-clock-part-global-colck-timer {
+  padding: 4px;
 }
 
 .slide-one-clock-part-gantt-chart {
   background-color: #0647d3;
   border: 1px solid black;
   padding: 10px;
-   -size: 30px;
+width: 300px;
   text-align: center;
   display: grid;
   position: relative;
@@ -537,7 +546,7 @@
   background-color: #d35806;
   border: 1px solid black;
   padding: 10px;
-   -size: 30px;
+  
   text-align: center;
   display: grid;
   position: absolute;
@@ -552,14 +561,33 @@
   background-color: #d3a306;
   border: 1px solid black;
   padding: 10px;
+  box-sizing: border-box;
    -size: 30px;
   text-align: center;
-  display: grid;
   position: absolute;
   left: 0;
-
+  overflow: hidden;
   height: 100%;
-  width: 20px;
+  width: 80px;
+}
+
+.slide-one-clock-part-gantt-chart-time-axis-timeline {
+  display: grid;
+  grid-auto-rows: 100px;
+  align-items: start;
+  height: 100%;
+  overflow: hidden;
+}
+
+.slide-one-clock-part-gantt-chart-time-axis-timeline-fonts {
+  background-color: #a68100;
+  border-bottom: 1px solid black;
+  font-size: 10px;
+  color: #ffffff;
+  text-align: left;
+  padding: 4px 4px;
+  line-height: 42px;
+  height: 50px;
 }
 
 .slide-one-clock-part-gantt-chart-task-axis {
@@ -1150,4 +1178,678 @@ pointer-events: none;
 
 .pomodoro-help-content li {
     margin-bottom: 4px;
+}
+
+/* --- Status Bar Timer --- */
+.controlar-status-bar-timer {
+    user-select: none;
+    color: var(--text-on-accent, #fff);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+    transition: background-color 0.6s linear, color 0.3s ease;
+    white-space: nowrap;
+}
+
+.controlar-status-bar-timer:hover {
+    filter: brightness(1.15);
+}
+
+/*======================== Right Sidebar Timer Menu ==========================*/
+.controlar-sidebar-view {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    height: 100%;
+    width: 100%;
+    padding: 10px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.controlar-sidebar-section {
+    flex-shrink: 0;
+}
+
+.controlar-sidebar-clock {
+    width: 100%;
+}
+
+.controlar-sidebar-clock .slide-one-clock-part-global-colck {
+    width: 100%;
+    background-color: red;
+}
+
+.controlar-sidebar-timeline {
+    width: 100%;
+}
+
+.controlar-sidebar-timeline .slide-one-time-line {
+    width: 100%;
+    height: 350px;
+}
+
+.controlar-sidebar-timeline .slide-one-time-line-task-scroll-bar {
+    height: 350px;
+    width: 100%;
+}
+
+@media (max-width: 400px) {
+    .controlar-sidebar-view {
+        padding: 6px;
+    }
+}
+
+/*======================== Theme: LIQUID MAGMA ==========================*/
+/* Everything becomes translucent glowing glass, stacked, magma colors. */
+body.controlar-theme-magma .modal-controlar {
+    background: radial-gradient(circle at 30% 15%, rgba(165, 46, 12, 0.5), rgba(64, 12, 6, 0.75) 70%);
+    color: #ffe2b8;
+}
+body.controlar-theme-magma .controlar,
+body.controlar-theme-magma .slide-one,
+body.controlar-theme-magma .slide-two,
+body.controlar-theme-magma .slide-three {
+    background: rgba(255, 96, 40, 0.10);
+    border: 1px solid rgba(255, 170, 90, 0.45);
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 0 0 1px rgba(255, 160, 100, 0.12), 0 0 24px rgba(255, 70, 20, 0.18);
+}
+
+/* Global clock */
+body.controlar-theme-magma .slide-one-clock-part-global-colck {
+    background: linear-gradient(180deg, rgba(255, 150, 70, 0.55), rgba(140, 30, 10, 0.5)) !important;
+    border: 1px solid rgba(255, 190, 110, 0.55);
+    box-shadow: inset 0 0 16px rgba(255, 120, 40, 0.3), 0 0 20px rgba(255, 80, 20, 0.3);
+    backdrop-filter: blur(6px);
+}
+body.controlar-theme-magma .slide-one-clock-part-global-colck-clock,
+body.controlar-theme-magma .slide-one-clock-part-global-colck-timer {
+    color: #ffe6c2;
+    text-shadow: 0 0 10px rgba(255, 150, 50, 0.8);
+}
+
+/* Timeline */
+body.controlar-theme-magma .slide-one-time-line,
+body.controlar-theme-magma .slide-two-tasks-scrollbar {
+    background: rgba(150, 30, 8, 0.22);
+    border: 1px solid rgba(255, 170, 70, 0.45);
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 0 0 1px rgba(255, 140, 80, 0.10);
+}
+body.controlar-theme-magma .slide-one-time-line-task-scroll-bar {
+    background: rgba(120, 25, 8, 0.22);
+    border: 1px solid rgba(255, 150, 70, 0.4);
+    backdrop-filter: blur(4px);
+}
+body.controlar-theme-magma .slide-one-time-line-task-list {
+    background: transparent;
+}
+
+/* Task pipe (liquid) + fill */
+body.controlar-theme-magma .slide-one-time-line-task-pipe {
+    background: rgba(255, 80, 50, 0.12);
+    border: 1px solid rgba(255, 180, 90, 0.6);
+    box-shadow: inset 0 0 10px rgba(255, 110, 25, 0.25), 0 0 8px rgba(255, 90, 30, 0.25);
+    backdrop-filter: blur(2px);
+}
+body.controlar-theme-magma .slide-one-time-line-task-pipe-fill {
+    background: linear-gradient(180deg, #ffd166 0%, #ff9a3d 55%, #ff3d4a 100%);
+    box-shadow: 0 0 14px rgba(255, 110, 25, 0.8), inset 0 0 6px rgba(255, 245, 200, 0.65);
+    border-radius: 8px;
+}
+body.controlar-theme-magma .slide-one-time-line-task-timer {
+    color: #ffdf9e;
+    text-shadow: 0 0 8px rgba(255, 200, 40, 0.85);
+}
+body.controlar-theme-magma .slide-one-time-line-task-text {
+    color: #ffcfc0;
+}
+body.controlar-theme-magma .slide-one-time-line-task-global-task .slide-one-time-line-task-pipe {
+    border-color: #ffd700;
+    box-shadow: 0 0 12px 3px rgba(255, 190, 20, 0.8), inset 0 0 10px rgba(255, 150, 20, 0.5);
+}
+
+/* Range controls */
+body.controlar-theme-magma .slide-one-time-line-range,
+body.controlar-theme-magma .slide-one-time-line-range-label {
+    background: rgba(80, 40, 10, 0.30);
+    border: 1px solid rgba(255, 160, 70, 0.5);
+    backdrop-filter: blur(6px);
+    color: #ffe0b0;
+}
+body.controlar-theme-magma .slide-one-time-line-range-scroll {
+    background: rgba(40, 10, 8, 0.55);
+    border: 1px solid rgba(255, 160, 70, 0.5);
+    color: #ffe0b0;
+}
+
+/* End-time line + magnifier glass */
+body.controlar-theme-magma .slide-one-clock-part-end-time-line,
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-scroll-bar,
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-scroll-bar-control {
+    background: rgba(90, 25, 8, 0.30);
+    border: 1px solid rgba(255, 150, 70, 0.45);
+    backdrop-filter: blur(4px);
+}
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-range-bar-glass {
+    background: rgba(80, 20, 8, 0.45);
+    border-color: rgba(255, 170, 90, 0.6);
+    box-shadow: 0 0 12px rgba(255, 100, 30, 0.35);
+}
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-task-incomplete { color: #ffd0b0; }
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-task-complete { color: #ff9d8a; }
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-task-dot { color: #ffb45e; }
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-task-dot-complete { color: #ffd166; }
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-range-bar-glass-task-incomplete,
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-scroll-bar-tasks { color: #ffd0b0; }
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-scroll-bar-line { color: #ffb06a; }
+body.controlar-theme-magma .slide-one-clock-part-end-time-line-scroll-bar-control-expand-btn {
+    background: rgba(255, 120, 40, 0.55);
+    border: 1px solid rgba(255, 190, 120, 0.6);
+    color: #ffe9cc;
+}
+
+/* Gantt */
+body.controlar-theme-magma .slide-one-clock-part-gantt-chart {
+    background: rgba(120, 28, 6, 0.30);
+    border: 1px solid rgba(255, 160, 70, 0.5);
+    backdrop-filter: blur(6px);
+}
+body.controlar-theme-magma .slide-one-clock-part-gantt-chart-time-axis,
+body.controlar-theme-magma .slide-one-clock-part-gantt-chart-page,
+body.controlar-theme-magma .slide-one-clock-part-gantt-chart-task-axis {
+    background: rgba(150, 45, 10, 0.25);
+    border-color: rgba(255, 170, 90, 0.45);
+}
+body.controlar-theme-magma .slide-one-clock-part-gantt-chart-page-tasks {
+    background: rgba(255, 140, 40, 0.18);
+    border-color: rgba(255, 190, 100, 0.45);
+}
+body.controlar-theme-magma .slide-one-clock-part-gantt-chart-page-tasks-fonts {
+    background: rgba(255, 90, 25, 0.25);
+    border-color: rgba(255, 200, 110, 0.4);
+    color: #ffe6c2;
+}
+body.controlar-theme-magma .slide-one-clock-part-gantt-chart-expand-btn {
+    background: rgba(255, 130, 45, 0.6);
+    border-color: rgba(255, 190, 120, 0.6);
+    color: #fff0d8;
+}
+
+/* Control buttons */
+body.controlar-theme-magma .controlar-btn-theme,
+body.controlar-theme-magma .controlar-btn-help,
+body.controlar-theme-magma .controlar-btn-right,
+body.controlar-theme-magma .controlar-btn-left,
+body.controlar-theme-magma .controlar-btn-plus,
+body.controlar-theme-magma .controlar-btn-submit {
+    background: linear-gradient(180deg, rgba(255, 150, 80, 0.7), rgba(160, 40, 15, 0.75)) !important;
+    border: 1px solid rgba(255, 200, 120, 0.5);
+    box-shadow: inset 0 1px 0 rgba(255, 240, 200, 0.4), 0 0 12px rgba(255, 100, 30, 0.3);
+    color: #ffe9d0;
+}
+
+/* Slide-2 panels */
+body.controlar-theme-magma .slide-two-badgesList {
+    background: rgba(150, 45, 12, 0.25);
+    border-color: rgba(255, 170, 90, 0.45);
+}
+body.controlar-theme-magma .slide-two-tasks-summery {
+    background: rgba(60, 15, 8, 0.35);
+    border-color: rgba(255, 170, 90, 0.45);
+}
+body.controlar-theme-magma .slide-two-tasks-incomplete-category-name,
+body.controlar-theme-magma .slide-two-tasks-complete-category-name {
+    background: rgba(255, 120, 40, 0.35);
+    border-color: rgba(255, 180, 100, 0.5);
+    color: #ffedda;
+}
+body.controlar-theme-magma .slide-two-tasks-incomplete-tasks {
+    background: rgba(255, 130, 45, 0.15);
+    border-color: rgba(255, 180, 100, 0.45);
+}
+body.controlar-theme-magma .slide-two-tasks-incomplete-tasks-container {
+    background: rgba(120, 25, 8, 0.35);
+    border-color: rgba(255, 170, 90, 0.5);
+    backdrop-filter: blur(4px);
+}
+body.controlar-theme-magma .slide-two-tasks-colaps-btn {
+    background: rgba(255, 130, 45, 0.5);
+    border-color: rgba(255, 190, 110, 0.55);
+    color: #fff2df;
+}
+body.controlar-theme-magma .slide-two-badges {
+    color: #ffe0b8;
+    border-color: rgba(255, 180, 100, 0.5);
+}
+body.controlar-theme-magma .slide-two-tasks-incomplete-tasks-container-header,
+body.controlar-theme-magma .slide-two-tasks-incomplete-tasks-container-completed-label,
+body.controlar-theme-magma .slide-two-tasks-incomplete-tasks-container-details {
+    background: rgba(255, 150, 60, 0.2);
+    border-color: rgba(255, 190, 120, 0.45);
+    color: #ffe9cc;
+}
+
+/* Slide-3 */
+body.controlar-theme-magma .slide-three-table-header,
+body.controlar-theme-magma .slide-three-table-body {
+    background: rgba(150, 40, 10, 0.25);
+    border-color: rgba(255, 170, 90, 0.45);
+    color: #ffe6c2;
+}
+
+/* Sidebar */
+body.controlar-theme-magma .controlar-sidebar-view .slide-one-clock-part-global-colck {
+    background: linear-gradient(180deg, rgba(255, 190, 70, 0.55), rgba(140, 30, 10, 0.5)) !important;
+    border-color: rgba(255, 180, 110, 0.55);
+}
+
+/*======================== Theme: ATLAS METAL ==========================*/
+/* Everything is stacked 3D embossed metal with glowing pastel accents. */
+body.controlar-theme-metal .modal-controlar {
+    background: linear-gradient(160deg, #232b44, #313b61 60%, #1e2540);
+    color: #eef1fb;
+}
+body.controlar-theme-metal .controlar,
+body.controlar-theme-metal .slide-one,
+body.controlar-theme-metal .slide-two,
+body.controlar-theme-metal .slide-three {
+    background: linear-gradient(160deg, #eef0fb, #c6cceb 45%, #8f9ac0);
+    border: 1px solid #f2f4ff;
+    box-shadow: inset 0 1px 0 #ffffff, inset 0 -2px 6px rgba(30, 40, 80, 0.35), 0 8px 16px rgba(10, 15, 40, 0.4);
+    color: #1d2340;
+}
+
+/* Global clock */
+body.controlar-theme-metal .slide-one-clock-part-global-colck {
+    background: linear-gradient(180deg, #9fb6f0, #6c85c8 55%, #46588f) !important;
+    border: 1px solid #eaf0ff;
+    box-shadow: inset 0 1px 0 #ffffff, inset 0 -2px 6px rgba(20, 30, 80, 0.4), 0 0 18px rgba(160, 190, 255, 0.5);
+    color: #ffffff;
+}
+body.controlar-theme-metal .slide-one-clock-part-global-colck-clock,
+body.controlar-theme-metal .slide-one-clock-part-global-colck-timer {
+    color: #fff7ff;
+    text-shadow: 0 0 12px rgba(255, 200, 250, 0.85), 0 1px 0 rgba(20, 25, 60, 0.5);
+}
+
+/* Timeline */
+body.controlar-theme-metal .slide-one-time-line,
+body.controlar-theme-metal .slide-two-tasks-scrollbar {
+    background: linear-gradient(160deg, #b3b9d8, #7d86ae 50%, #5a6188);
+    border: 1px solid #dbe2ff;
+    box-shadow: inset 0 1px 0 #ffffff, inset 0 -2px 6px rgba(20, 25, 60, 0.35), 0 6px 14px rgba(10, 15, 40, 0.35);
+}
+body.controlar-theme-metal .slide-one-time-line-task-scroll-bar {
+    background: linear-gradient(160deg, #aab0d2, #77809f );
+    border: 1px solid #d8defb;
+}
+body.controlar-theme-metal .slide-one-time-line-task-list { background: transparent; }
+
+/* Task pipe (metal tube) + glowing pastel fill */
+body.controlar-theme-metal .slide-one-time-line-task-pipe {
+    background: linear-gradient(180deg, #6db6fe, #a08cff);
+    border: 1px solid #e9e2ff;
+    box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.55), inset 0 -2px 5px rgba(50, 60, 130, 0.5), 0 0 10px rgba(150, 190, 255, 0.6);
+}
+body.controlar-theme-metal .slide-one-time-line-task-pipe-fill {
+    background: linear-gradient(180deg, #ffe3f3, #ffb3d9);
+    box-shadow: 0 0 16px rgba(255, 170, 220, 0.95), inset 0 0 8px rgba(255, 255, 255, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+}
+body.controlar-theme-metal .slide-one-time-line-task-timer {
+    color: #fff0ff;
+    text-shadow: 0 0 10px rgba(255, 180, 230, 0.9);
+}
+body.controlar-theme-metal .slide-one-time-line-task-text {
+    color: #2c3350;
+    text-shadow: 0 1px 0 #ffffff;
+}
+body.controlar-theme-metal .slide-one-time-line-task-global-task .slide-one-time-line-task-pipe {
+    border-color: #fff2a8;
+    box-shadow: 0 0 14px 3px rgba(255, 235, 150, 0.9), inset 0 0 10px rgba(255, 255, 200, 0.6);
+}
+
+/* Range controls */
+body.controlar-theme-metal .slide-one-time-line-range,
+body.controlar-theme-metal .slide-one-time-line-range-label {
+    background: linear-gradient(160deg, #a9b3dc, #747ea8 );
+    border: 1px solid #dce3ff;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -2px 5px rgba(20, 30, 70, 0.4);
+    color: #ffffff;
+}
+body.controlar-theme-metal .slide-one-time-line-range-scroll {
+    background: linear-gradient(160deg, #5a6492, #383f63);
+    border: 1px solid #cfd8ff;
+    color: #ffffff;
+}
+
+/* End-time line + glass */
+body.controlar-theme-metal .slide-one-clock-part-end-time-line,
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-scroll-bar,
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-scroll-bar-control {
+    background: linear-gradient(160deg, #8d98c4, #5b628c);
+    border: 1px solid #d8dffa;
+    box-shadow: inset 0 1px 0 #ffffff, inset 0 -2px 5px rgba(15, 20, 60, 0.4);
+}
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-range-bar-glass {
+    background: linear-gradient(160deg, #5d6aa0, #343b6b);
+    border-color: #e6ecff;
+    box-shadow: 0 0 14px rgba(150, 170, 255, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.15);
+}
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-task-incomplete,
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-range-bar-glass-task-incomplete { color: #ffe9f6; }
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-task-complete,
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-range-bar-glass-task-complete { color: #d6ffe0; }
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-task-dot { color: #ffd0ec; }
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-task-dot-complete { color: #9fffdf; }
+body.controlar-theme-metal .slide-one-clock-part-end-time-line-scroll-bar-control-expand-btn {
+    background: linear-gradient(180deg, #ffb6e0, #d076b0);
+    border: 1px solid #ffe6f6;
+    box-shadow: inset 0 1px 0 #fff, 0 0 10px rgba(255, 160, 220, 0.6);
+    color: #3a1140;
+}
+
+/* Gantt */
+body.controlar-theme-metal .slide-one-clock-part-gantt-chart {
+    background: linear-gradient(160deg, #6d79ad, #454c7a);
+    border: 1px solid #d8dffa;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -2px 5px rgba(20, 25, 70, 0.4);
+}
+body.controlar-theme-metal .slide-one-clock-part-gantt-chart-time-axis,
+body.controlar-theme-metal .slide-one-clock-part-gantt-chart-page,
+body.controlar-theme-metal .slide-one-clock-part-gantt-chart-task-axis {
+    background: linear-gradient(160deg, #8b97c2, #3f466f);
+    border-color: #e0e6ff;
+}
+body.controlar-theme-metal .slide-one-clock-part-gantt-chart-page-tasks {
+    background: rgba(210, 200, 255, 0.22);
+    border-color: #d8dffa;
+}
+body.controlar-theme-metal .slide-one-clock-part-gantt-chart-page-tasks-fonts {
+    background: linear-gradient(180deg, #ffc2e8, #b78be0);
+    border-color: #efe0ff;
+    box-shadow: inset 0 1px 0 #fff;
+    color: #ffffff;
+}
+body.controlar-theme-metal .slide-one-clock-part-gantt-chart-expand-btn {
+    background: linear-gradient(180deg, #a9d3ff, #6f9adf);
+    border-color: #e4efff;
+    color: #ffffff;
+}
+
+/* Control buttons */
+body.controlar-theme-metal .controlar-btn-theme,
+body.controlar-theme-metal .controlar-btn-help,
+body.controlar-theme-metal .controlar-btn-right,
+body.controlar-theme-metal .controlar-btn-left,
+body.controlar-theme-metal .controlar-btn-plus,
+body.controlar-theme-metal .controlar-btn-submit {
+    background: linear-gradient(180deg, #cfd8ff, #8a93c8 55%, #565e94) !important;
+    border: 1px solid #e8ecff;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -2px 5px rgba(30, 35, 90, 0.4), 0 4px 10px rgba(10, 15, 40, 0.35);
+    color: #ffffff;
+}
+
+/* Slide-2 */
+body.controlar-theme-metal .slide-two-badgesList {
+    background: linear-gradient(160deg, #aab6df, #767ea8);
+    border-color: #dce3ff;
+}
+body.controlar-theme-metal .slide-two-tasks-summery {
+    background: linear-gradient(160deg, #6a74a4, #46507e);
+    border-color: #d8dffa;
+}
+body.controlar-theme-metal .slide-two-tasks-incomplete-category-name,
+body.controlar-theme-metal .slide-two-tasks-complete-category-name {
+    background: linear-gradient(180deg, #ffc4ec, #b47fe0);
+    border-color: #f2e6ff;
+    box-shadow: inset 0 1px 0 #fff;
+    color: #ffffff;
+}
+body.controlar-theme-metal .slide-two-tasks-incomplete-tasks {
+    background: rgba(210, 220, 255, 0.2);
+    border-color: #dfe5ff;
+}
+body.controlar-theme-metal .slide-two-tasks-incomplete-tasks-container {
+    background: linear-gradient(160deg, #8b97c2, #5a6288);
+    border-color: #e0e6ff;
+}
+body.controlar-theme-metal .slide-two-tasks-colaps-btn {
+    background: linear-gradient(180deg, #a9c8ff, #6a84d0);
+    border-color: #e4efff;
+    color: #ffffff;
+}
+body.controlar-theme-metal .slide-two-badges {
+    color: #ffffff;
+    border-color: #e4e9ff;
+}
+body.controlar-theme-metal .slide-two-tasks-incomplete-tasks-container-header,
+body.controlar-theme-metal .slide-two-tasks-incomplete-tasks-container-completed-label,
+body.controlar-theme-metal .slide-two-tasks-incomplete-tasks-container-details {
+    background: linear-gradient(160deg, #a9c2f0, #7a8abd);
+    border-color: #e4ecff;
+    color: #ffffff;
+}
+
+/* Slide-3 */
+body.controlar-theme-metal .slide-three-table-header,
+body.controlar-theme-metal .slide-three-table-body {
+    background: linear-gradient(160deg, #96a3d0, #5a6288);
+    border-color: #dde6ff;
+    color: #ffffff;
+}
+
+/* Sidebar */
+body.controlar-theme-metal .controlar-sidebar-view .slide-one-clock-part-global-colck {
+    background: linear-gradient(180deg, #a9c4ff, #6a7fc0 55%, #4a558c) !important;
+    border-color: #eaf0ff;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -2px 6px rgba(20, 30, 80, 0.4), 0 0 16px rgba(160, 190, 255, 0.45);
+}
+
+/*======================== Theme: PAPER CRAYON ==========================*/
+/* Everything looks like paper stacked on top of each other, hand drawn in crayon. */
+body.controlar-theme-paper .modal-controlar {
+    background: #f5e9d0;
+    background-image: repeating-linear-gradient(0deg, rgba(150, 110, 60, 0.05) 0 2px, transparent 2px 4px);
+    color: #5a4632;
+}
+body.controlar-theme-paper .controlar,
+body.controlar-theme-paper .slide-one,
+body.controlar-theme-paper .slide-two,
+body.controlar-theme-paper .slide-three {
+    background: #fbf1df;
+    border: 2px solid #b98a4e;
+    box-shadow: 0 2px 0 rgba(150, 110, 60, 0.35), 0 5px 0 rgba(150, 110, 60, 0.2), 0 10px 14px rgba(120, 80, 40, 0.25);
+    color: #5a4632;
+}
+
+/* Global clock (crayon paper card) */
+body.controlar-theme-paper .slide-one-clock-part-global-colck {
+    background: #ffe9b8 !important;
+    border: 3px solid #d25b4e !important;
+    border-radius: 10px;
+    box-shadow: 0 3px 0 rgba(145, 90, 45, 0.35), 0 8px 14px rgba(120, 80, 40, 0.25);
+    color: #5a4632;
+}
+body.controlar-theme-paper .slide-one-clock-part-global-colck-clock,
+body.controlar-theme-paper .slide-one-clock-part-global-colck-timer {
+    color: #c94f4f;
+    text-shadow: 1px 1px 0 rgba(200, 150, 100, 0.5);
+}
+
+/* Timeline (paper sheet) */
+body.controlar-theme-paper .slide-one-time-line,
+body.controlar-theme-paper .slide-two-tasks-scrollbar {
+    background: #fbf0d7;
+    background-image: repeating-linear-gradient(0deg, rgba(150, 110, 60, 0.06) 0 2px, transparent 2px 4px);
+    border: 2px dashed #c39a5a;
+    box-shadow: 0 2px 0 rgba(150, 110, 60, 0.3), 0 5px 0 rgba(150, 110, 60, 0.18), 0 9px 12px rgba(120, 80, 40, 0.22);
+}
+body.controlar-theme-paper .slide-one-time-line-task-scroll-bar {
+    background: rgba(245, 230, 200, 0.6);
+    border: 2px dashed #d0a86a;
+}
+body.controlar-theme-paper .slide-one-time-line-task-list { background: transparent; }
+
+/* Task pipe (crayon trough) + crayon liquid fill */
+body.controlar-theme-paper .slide-one-time-line-task-pipe {
+    background: rgba(220, 190, 140, 0.55);
+    border: 2px dashed rgba(150, 100, 50, 0.7);
+    box-shadow: 2px 2px 0 rgba(150, 100, 60, 0.25);
+}
+body.controlar-theme-paper .slide-one-time-line-task-pipe-fill {
+    background: linear-gradient(180deg, #e8a040, #c84f2e);
+    border: 2px solid #9c3f1e;
+    border-radius: 8px;
+    box-shadow: 2px 2px 0 rgba(140, 80, 40, 0.35);
+}
+body.controlar-theme-paper .slide-one-time-line-task-timer {
+    color: #d25b4e;
+    text-shadow: 1px 1px 0 rgba(210, 150, 90, 0.4);
+    font-weight: 900;
+}
+body.controlar-theme-paper .slide-one-time-line-task-text {
+    color: #7a5230;
+}
+body.controlar-theme-paper .slide-one-time-line-task-global-task .slide-one-time-line-task-pipe {
+    border-color: #e8c43c;
+    box-shadow: 3px 3px 0 rgba(180, 140, 60, 0.5);
+}
+
+/* Range controls (crayon blocks) */
+body.controlar-theme-paper .slide-one-time-line-range,
+body.controlar-theme-paper .slide-one-time-line-range-label {
+    background: #f6e7c4;
+    border: 2px dashed #b98a4e;
+    box-shadow: 2px 2px 0 rgba(150, 100, 60, 0.25);
+    color: #6a4a2a;
+}
+body.controlar-theme-paper .slide-one-time-line-range-scroll {
+    background: #efe0bc;
+    border: 2px dashed #b98a4e;
+    color: #5a4632;
+}
+
+/* End-time line (paper) */
+body.controlar-theme-paper .slide-one-clock-part-end-time-line,
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-scroll-bar,
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-scroll-bar-control {
+    background: #f7ead0;
+    border: 2px dashed #c9a45e;
+    box-shadow: 2px 2px 0 rgba(150, 100, 60, 0.25);
+}
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-range-bar-glass {
+    background: #fdf3dd;
+    border: 2px solid #c96a52;
+    box-shadow: 3px 3px 0 rgba(150, 100, 60, 0.3);
+}
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-task-incomplete,
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-range-bar-glass-task-incomplete { color: #d25b4e; }
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-task-complete,
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-range-bar-glass-task-complete { color: #3f9b4f; }
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-task-dot { color: #d25b4e; }
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-task-dot-complete { color: #4fae5a; }
+body.controlar-theme-paper .slide-one-clock-part-end-time-line-scroll-bar-control-expand-btn {
+    background: #f2b04a;
+    border: 2px solid #a06921;
+    box-shadow: 2px 2px 0 rgba(150, 90, 40, 0.35);
+    color: #fff6e6;
+}
+
+/* Gantt */
+body.controlar-theme-paper .slide-one-clock-part-gantt-chart {
+    background: #f8ecd4;
+    border: 2px dashed #c9a45e;
+    box-shadow: 2px 2px 0 rgba(150, 100, 60, 0.25);
+}
+body.controlar-theme-paper .slide-one-clock-part-gantt-chart-time-axis,
+body.controlar-theme-paper .slide-one-clock-part-gantt-chart-page,
+body.controlar-theme-paper .slide-one-clock-part-gantt-chart-task-axis {
+    background: #fbf3e2;
+    border-color: #c9a45e;
+}
+body.controlar-theme-paper .slide-one-clock-part-gantt-chart-page-tasks {
+    background: #fdf2d8;
+    border-color: #c9a45e;
+}
+body.controlar-theme-paper .slide-one-clock-part-gantt-chart-page-tasks-fonts {
+    background: #d9e0f0;
+    border-color: #9fa9c9;
+    color: #4a5a8a;
+}
+body.controlar-theme-paper .slide-one-clock-part-gantt-chart-expand-btn {
+    background: #e8b04a;
+    border-color: #b07a28;
+    color: #fff6e6;
+}
+
+/* Control buttons (crayon blobs) */
+body.controlar-theme-paper .controlar-btn-theme,
+body.controlar-theme-paper .controlar-btn-help,
+body.controlar-theme-paper .controlar-btn-right,
+body.controlar-theme-paper .controlar-btn-left,
+body.controlar-theme-paper .controlar-btn-plus,
+body.controlar-theme-paper .controlar-btn-submit {
+    background: #f2b14c !important;
+    border: 2px solid #a8541f;
+    box-shadow: 2px 2px 0 rgba(140, 80, 30, 0.35);
+    color: #fff6e6;
+}
+
+/* Slide-2 */
+body.controlar-theme-paper .slide-two-badgesList,
+body.controlar-theme-paper .slide-two-tasks-summery {
+    background: #f8ecd2;
+    border: 2px dashed #b98a4e;
+    color: #5a4632;
+}
+body.controlar-theme-paper .slide-two-tasks-incomplete-category-name {
+    background: #f3c89a;
+    border: 2px solid #c8793f;
+    color: #4a2f18;
+}
+body.controlar-theme-paper .slide-two-tasks-complete-category-name {
+    background: #cfe3ae;
+    border: 2px dashed #7d9c54;
+    color: #3c5226;
+}
+body.controlar-theme-paper .slide-two-tasks-incomplete-tasks {
+    background: #fdefd8;
+    border: 3px dashed #d8a15e;
+}
+body.controlar-theme-paper .slide-two-tasks-incomplete-tasks-container {
+    background: #f1fbe6;
+    border: 2px dotted #8fb26a;
+}
+body.controlar-theme-paper .slide-two-tasks-colaps-btn {
+    background: #e0b96a;
+    border: 2px solid #a16629;
+    color: #fff6e6;
+}
+body.controlar-theme-paper .slide-two-badges {
+    color: #6a4a2a;
+    border-color: #b98a4e;
+}
+body.controlar-theme-paper .slide-two-tasks-incomplete-tasks-container-header,
+body.controlar-theme-paper .slide-two-tasks-incomplete-tasks-container-completed-label,
+body.controlar-theme-paper .slide-two-tasks-incomplete-tasks-container-details {
+    background: #fdf3dc;
+    border: 2px dashed #d0a86a;
+    color: #5a4632;
+}
+
+/* Slide-3 */
+body.controlar-theme-paper .slide-three-table-header,
+body.controlar-theme-paper .slide-three-table-body {
+    background: #f9eed7;
+    border: 2px dashed #b98a4e;
+    color: #5a4632;
+}
+
+/* Sidebar */
+body.controlar-theme-paper .controlar-sidebar-view .slide-one-clock-part-global-colck {
+    background: #ffe9b8 !important;
+    border-color: #d77b4e !important;
+    box-shadow: 0 3px 0 rgba(150, 80, 45, 0.35), 0 8px 14px rgba(120, 80, 40, 0.25);
 }
