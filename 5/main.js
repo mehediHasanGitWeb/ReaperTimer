@@ -1,4 +1,4 @@
-const { Plugin, Modal, setIcon } = require('obsidian');
+const { Plugin, Modal, ItemView, setIcon } = require('obsidian');
 
 // const { readData } = require('./components/readData.js');
 
@@ -18,6 +18,25 @@ const PLACE_ID = Object.freeze({
     SILDE_TWO_NOT_COMPLPET_TASKS: Symbol('SILDE_TWO_NOT_COMPLPET_TASKS'),
     SILDE_ONE_TIME_LINE: Symbol('SILDE_ONE_TIME_LINE')
 });
+
+
+const THEMES = [
+    { name: null, label: 'Theme' },
+    { name: 'magma', label: 'Liquid Magma' },
+    { name: 'metal', label: 'Atlas Metal' },
+    { name: 'paper', label: 'Paper Crayon' }
+];
+
+const applyControlarTheme = (plugin, index) => {
+    const i = ((index % THEMES.length) + THEMES.length) % THEMES.length;
+    const theme = THEMES[i];
+    document.body.classList.remove('controlar-theme-magma', 'controlar-theme-metal', 'controlar-theme-paper');
+    if (theme.name) {
+        document.body.classList.add(`controlar-theme-${theme.name}`);
+    }
+    plugin.persistedThemeIndex = i;
+    return theme;
+};
 
 
 
@@ -80,7 +99,6 @@ const controlarEdit = (buttonGroup, instance) => {
     // 4. Background Image Selector
     const rawBackGrounds = fileData?.data?.backgrounds || fileData?.backgrounds || [];
     const backGrounds = rawBackGrounds.map(b => typeof b === 'string' ? b : b?.Name).filter(Boolean);
-    if (!backGrounds.includes('Default')) backGrounds.unshift('Default');
     const backGroundSelect = formContainer.createEl('select', { cls: 'controlar-select' });
     backGrounds.forEach(bg => {
         backGroundSelect.createEl('option', { text: `Background: ${bg}`, value: bg });
@@ -89,7 +107,6 @@ const controlarEdit = (buttonGroup, instance) => {
     // 5. Alarm Sound Selector
     const rawAlarmSounds = fileData?.data?.alarmSounds || fileData?.alarmSounds || [];
     const alarmSounds = rawAlarmSounds.map(s => typeof s === 'string' ? s : s?.Name).filter(Boolean);
-    if (!alarmSounds.includes('Default Alarm')) alarmSounds.unshift('Default Alarm');
     const alarmSoundSelect = formContainer.createEl('select', { cls: 'controlar-select' });
     alarmSounds.forEach(sound => {
         alarmSoundSelect.createEl('option', { text: `Alarm: ${sound}`, value: sound });
@@ -98,7 +115,6 @@ const controlarEdit = (buttonGroup, instance) => {
     // 6. Ambient Sound Selector
     const rawAmbientSounds = fileData?.data?.ambientSounds || fileData?.ambientSounds || [];
     const ambientSounds = rawAmbientSounds.map(s => typeof s === 'string' ? s : s?.Name).filter(Boolean);
-    if (!ambientSounds.includes('None')) ambientSounds.unshift('None');
     const ambientSoundsSelect = formContainer.createEl('select', { cls: 'controlar-select' });
     ambientSounds.forEach(sound => {
         ambientSoundsSelect.createEl('option', { text: `Ambient: ${sound}`, value: sound });
@@ -289,8 +305,16 @@ const controlsBtn = (parentContainer, instance) => {
 
 
     const controlarTheme = buttonGroup.createEl('button', { text: 'controlar theme', cls: "controlar-btn-theme" });
+    const themePlugin = instance.plugin;
+    themePlugin.persistedThemeIndex = themePlugin.persistedThemeIndex || 0;
+    const syncTheme = () => {
+        const theme = applyControlarTheme(themePlugin, themePlugin.persistedThemeIndex);
+        controlarTheme.setText(theme.label);
+    };
+    syncTheme();
     controlarTheme.addEventListener('click', () => {
-        console.log(`Action triggered on slide ${instance.currentSlide + 1}`);
+        themePlugin.persistedThemeIndex = themePlugin.persistedThemeIndex + 1;
+        syncTheme();
     });
 
     // Integrated controlarEdit call
@@ -335,8 +359,9 @@ const attachTaskSelectionListener = (taskEl, taskId, place, instance) => {
         if (place === PLACE_ID.SILDE_ONE_TIME_LINE) {
             console.log("taskEl:", taskEl, "taskId:", taskId, "place:", place);
 
-            const globalTask = getIncompleteTasksWithCategory(fileData)
-                .find(item => item && item.id === taskId);
+            // Store the live task object (not a copy) so the global task stays
+            // in sync with the timeline and keeps its selected highlight.
+            const globalTask = findTaskById(fileData, taskId);
 
             const currentGlobalId = fileData?.data?.globalTasks?.id;
 
@@ -427,16 +452,69 @@ const slideOneClock = (parentContainer, instance) => {
     clockEl.style.backgroundColor = 'red';
     clockEl.style.border = '1px solid var(--background-modifier-border)';
 
+    const clockDisplay = clockEl.createDiv({ cls: 'slide-one-clock-part-global-colck-clock' });
+    const timerDisplay = clockEl.createDiv({ cls: 'slide-one-clock-part-global-colck-timer' });
+    const pipeWrap = timerDisplay.createDiv({ cls: 'slide-one-time-line-task-pipe-wrap' });
+    const pipeEl = pipeWrap.createDiv({ cls: 'slide-one-time-line-task-pipe' });
+    const fillEl = pipeEl.createDiv({ cls: 'slide-one-time-line-task-pipe-fill' });
+    const timerText = pipeWrap.createDiv({ cls: 'slide-one-time-line-task-timer' });
+
     const updateClock = () => {
         const now = new Date();
-        clockEl.setText(now.toLocaleTimeString());
+        clockDisplay.setText(now.toLocaleTimeString());
+    };
+
+    const updateTimer = () => {
+        const globalTask = fileData?.data?.globalTasks;
+        if (!globalTask || globalTask.completed) {
+            fillEl.style.width = '0%';
+            fillEl.style.backgroundColor = 'transparent';
+            timerText.setText('–');
+            return;
+        }
+        const mode = getTimerMode(globalTask);
+        const dur = getTimerDurationSeconds(globalTask, mode);
+        let entry = instance.taskTimers?.[globalTask.id];
+        if (!entry) {
+            entry = { startedAt: Date.now(), durationSeconds: dur, mode };
+            if (!instance.taskTimers) instance.taskTimers = {};
+            instance.taskTimers[globalTask.id] = entry;
+        }
+        let remaining = null;
+        let totalMs = 0;
+        if (entry) {
+            if (entry.paused) {
+                remaining = entry.pausedRemaining != null ? entry.pausedRemaining : 0;
+                totalMs = entry.pausedTotalMs || 0;
+            } else if (entry.deadline != null) {
+                remaining = (entry.deadline - Date.now()) / 1000;
+                totalMs = entry.deadline - entry.startedAt;
+            } else if (entry.durationSeconds != null && entry.durationSeconds > 0) {
+                remaining = entry.durationSeconds - (Date.now() - entry.startedAt) / 1000;
+                totalMs = entry.durationSeconds * 1000;
+            }
+        } else if (dur != null) {
+            remaining = dur;
+            totalMs = dur * 1000;
+        }
+        const totalSeconds = totalMs / 1000;
+        const fill = totalSeconds > 0 && remaining != null
+            ? Math.max(0, Math.min(100, 100 * (1 - remaining / totalSeconds)))
+            : 0;
+        fillEl.style.width = fill + '%';
+        fillEl.style.backgroundColor = getTaskCategoryColor(globalTask, globalTask.categoryName || globalTask.category || 'Uncategorized');
+        timerText.setText(remaining != null ? formatCountdown(remaining) : '–');
     };
 
     updateClock();
+    updateTimer();
     if (instance.clockInterval) {
         clearInterval(instance.clockInterval);
     }
-    instance.clockInterval = setInterval(updateClock, 1000);
+    instance.clockInterval = setInterval(() => {
+        updateClock();
+        updateTimer();
+    }, 1000);
 }
 
 
@@ -450,8 +528,10 @@ const slideOneGanntChart = (parentContainer, instance) => {
         text: "expand"
     });
     const ganntChartTimeAxis = ganntChartEndTimeLine.createDiv({
-        cls: 'slide-one-clock-part-gantt-chart-time-axis',
-        text: "time"
+        cls: 'slide-one-clock-part-gantt-chart-time-axis'
+    });
+    const ganntChartTimeAxisTimeline = ganntChartTimeAxis.createDiv({
+        cls: 'slide-one-clock-part-gantt-chart-time-axis-timeline'
     });
     const ganntChartTaskAxis = ganntChartEndTimeLine.createDiv({
         cls: 'slide-one-clock-part-gantt-chart-task-axis',
@@ -465,16 +545,24 @@ const slideOneGanntChart = (parentContainer, instance) => {
         cls: 'slide-one-clock-part-gantt-chart-page-tasks'
     });
 
+    const formatAxisTime = (date) => date.toLocaleTimeString('en-GB', { hour12: false });
+
     for (let i = 0; i < 6; i++) {
         ganntChartPageTaskUnit.createDiv({
             cls: 'slide-one-clock-part-gantt-chart-page-tasks-fonts',
             text: "a"
         });
     }
+    ganntChartTimeAxisTimeline.createDiv({
+        cls: 'slide-one-clock-part-gantt-chart-time-axis-timeline-fonts',
+        text: formatAxisTime(new Date())
+    });
 
     // Every second: prepend a new tasks row (with 120 fonts) at the top of the
     // page and animate it scrolling down. When it reaches the bottom, the
-    // bottom-most row is deleted.
+    // bottom-most row is deleted. A matching time label is added/removed in the
+    // time-axis timeline so it corresponds 1:1 with the page tasks and scrolls
+    // in lock-step with them.
     let ganntScrollAnim = null;
     const animateScrollToBottom = (onDone) => {
         if (ganntScrollAnim) {
@@ -488,6 +576,7 @@ const slideOneGanntChart = (parentContainer, instance) => {
             const progress = Math.min(1, (now - startTime) / duration);
             const eased = 1 - Math.pow(1 - progress, 3);
             ganntChartPage.scrollTop = start + (target - start) * eased;
+            ganntChartTimeAxisTimeline.scrollTop = ganntChartPage.scrollTop;
             if (progress < 1) {
                 ganntScrollAnim = requestAnimationFrame(step);
             } else {
@@ -499,6 +588,7 @@ const slideOneGanntChart = (parentContainer, instance) => {
     };
 
     const cyclePage = () => {
+        const now = new Date();
         const newRow = ganntChartPage.createDiv({
             cls: 'slide-one-clock-part-gantt-chart-page-tasks'
         });
@@ -511,10 +601,23 @@ const slideOneGanntChart = (parentContainer, instance) => {
         if (ganntChartPage.firstChild) {
             ganntChartPage.insertBefore(newRow, ganntChartPage.firstChild);
         }
+
+        const timeLabel = ganntChartTimeAxisTimeline.createDiv({
+            cls: 'slide-one-clock-part-gantt-chart-time-axis-timeline-fonts',
+            text: formatAxisTime(now)
+        });
+        if (ganntChartTimeAxisTimeline.firstChild) {
+            ganntChartTimeAxisTimeline.insertBefore(timeLabel, ganntChartTimeAxisTimeline.firstChild);
+        }
+
         animateScrollToBottom(() => {
             if (ganntChartPage.lastChild && ganntChartPage.lastChild !== newRow) {
                 ganntChartPage.lastChild.remove();
+                if (ganntChartTimeAxisTimeline.lastChild && ganntChartTimeAxisTimeline.lastChild !== timeLabel) {
+                    ganntChartTimeAxisTimeline.lastChild.remove();
+                }
             }
+            ganntChartTimeAxisTimeline.scrollTop = ganntChartPage.scrollTop;
         });
     };
 
@@ -765,6 +868,9 @@ const slideOneEndTimeLine = (parentContainer, instance) => {
             });
         });
 
+        // Recently closed (completed) tasks sink to the bottom of the timeline
+        allTasks.sort((a, b) => (a.completed ? 1 : 0) - (b.completed ? 1 : 0));
+
         // Every task gets a dot on the end-time line; finished tasks (including
         // tasks finished during gap time) use the green complete dot, all other
         // tasks use the red dot and are styled red.
@@ -838,6 +944,26 @@ const slideOneClockpart = (parentContainer, instance) => {
     slideOneGanntChart(clockEl, instance)
 }
 
+
+// Find the actual (live) task object in the data by id, searching
+// uncategorized tasks and every category's task list.
+const findTaskById = (data, taskId) => {
+    if (!data || taskId == null) return null;
+    const targetData = data.data || data;
+    const uncategorized = targetData.notCategoriseTasks || targetData.notCategoriseTasksInComplete || [];
+    const searchList = (list) => {
+        if (!Array.isArray(list)) return null;
+        return list.find(t => t && t.id === taskId) || null;
+    };
+    let found = searchList(uncategorized);
+    if (found) return found;
+    const categories = targetData.category || [];
+    for (const cat of categories) {
+        found = searchList(cat.Tasks || cat.tasks);
+        if (found) return found;
+    }
+    return null;
+};
 
 // Helper function to extract all incomplete tasks with category names
 const getIncompleteTasksWithCategory = (data) => {
@@ -942,6 +1068,32 @@ const formatCountdown = (seconds) => {
     return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 };
 
+// Fluid RGB color for the live countdown progress.
+// progress = remaining / total (1 = just started, 0 = almost out of time).
+// Cascades seamlessly across 4 color brackets: Purple -> Blue -> Green -> Red.
+const getColor = (progress) => {
+    const p = Math.max(0, Math.min(1, progress));
+    const stops = [
+        { pos: 1, rgb: [176, 82, 255] },
+        { pos: 2 / 3, rgb: [64, 120, 255] },
+        { pos: 1 / 3, rgb: [60, 220, 130] },
+        { pos: 0, rgb: [255, 60, 60] }
+    ];
+    for (let i = 0; i < stops.length - 1; i++) {
+        const hi = stops[i];
+        const lo = stops[i + 1];
+        if (p <= hi.pos && p >= lo.pos) {
+            const span = hi.pos - lo.pos;
+            const t = span > 0 ? (hi.pos - p) / span : 1;
+            const r = Math.round(hi.rgb[0] + (lo.rgb[0] - hi.rgb[0]) * t);
+            const g = Math.round(hi.rgb[1] + (lo.rgb[1] - hi.rgb[1]) * t);
+            const b = Math.round(hi.rgb[2] + (lo.rgb[2] - hi.rgb[2]) * t);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+    }
+    return 'rgb(255, 60, 60)';
+};
+
 const getTaskCategoryColor = (task, categoryName) => {
     if (task && task.color) return task.color;
     const categories = fileData?.data?.category || fileData?.category || [];
@@ -1017,7 +1169,7 @@ const slideOneTimeLine = (parentContainer, instance) => {
             if (!entry) {
                 entry = { startedAt: Date.now(), durationSeconds: dur, mode };
                 instance.taskTimers[t.id] = entry;
-            } else if (entry.mode !== mode || entry.durationSeconds !== dur) {
+            } else if (entry.mode !== 'preset' && (entry.mode !== mode || entry.durationSeconds !== dur)) {
                 entry.mode = mode;
                 entry.durationSeconds = dur;
                 entry.startedAt = Date.now();
@@ -1048,6 +1200,7 @@ const slideOneTimeLine = (parentContainer, instance) => {
 
     const remainingSeconds = (entry) => {
         if (!entry) return null;
+        if (entry.paused) return entry.pausedRemaining != null ? entry.pausedRemaining : 0;
         if (entry.deadline != null) return (entry.deadline - Date.now()) / 1000;
         if (entry.durationSeconds != null && entry.durationSeconds > 0) {
             return entry.durationSeconds - (Date.now() - entry.startedAt) / 1000;
@@ -1057,9 +1210,12 @@ const slideOneTimeLine = (parentContainer, instance) => {
 
     const fillPercent = (entry) => {
         if (!entry) return 0;
-        const now = Date.now();
+        const remaining = remainingSeconds(entry);
+        if (remaining == null) return 0;
         let totalMs;
-        if (entry.deadline != null) {
+        if (entry.paused) {
+            totalMs = entry.pausedTotalMs || 0;
+        } else if (entry.deadline != null) {
             totalMs = entry.deadline - entry.startedAt;
         } else if (entry.durationSeconds != null && entry.durationSeconds > 0) {
             totalMs = entry.durationSeconds * 1000;
@@ -1067,7 +1223,7 @@ const slideOneTimeLine = (parentContainer, instance) => {
             return 0;
         }
         if (totalMs <= 0) return 0;
-        return Math.max(0, Math.min(100, ((now - entry.startedAt) / totalMs) * 100));
+        return Math.max(0, Math.min(100, 100 * (1 - remaining / (totalMs / 1000))));
     };
 
     const handleTimerExpired = (w, entry) => {
@@ -1097,6 +1253,13 @@ const slideOneTimeLine = (parentContainer, instance) => {
         const idx = parentList ? parentList.indexOf(t) : -1;
         if (idx >= 0) parentList.splice(idx + 1, 0, newTask);
         else if (parentList) parentList.push(newTask);
+
+        // If the expired task was the selected global task, keep the selection
+        // on its regenerated replacement so it stays highlighted in the timeline.
+        if (fileData?.data?.globalTasks === t) {
+            fileData.data.globalTasks = newTask;
+        }
+
         delete instance.taskTimers[t.id];
         return true;
     };
@@ -1131,9 +1294,11 @@ const slideOneTimeLine = (parentContainer, instance) => {
         }
 
         // Drop timer state for tasks that no longer need it (e.g. completed)
+        // Never drop the global task's entry so the status bar stays in sync
         const activeIds = new Set(tasks.map(w => w.sourceTask.id));
+        const protectedIds = new Set([fileData?.data?.globalTasks?.id]);
         Object.keys(instance.taskTimers).forEach(id => {
-            if (!activeIds.has(id)) delete instance.taskTimers[id];
+            if (!activeIds.has(id) && !protectedIds.has(id)) delete instance.taskTimers[id];
         });
 
         selectedTaskForTimeLine = tasks;
@@ -1651,9 +1816,9 @@ class HelpModal extends Modal {
         item2.createEl('summary', { text: '⚡ Mouse Shortcuts' });
         const body2 = item2.createDiv({ cls: 'pomodoro-help-content' });
         const list2 = body2.createEl('ul');
-        list2.createEl('li', { text: 'Left Click (Status Bar): Open main dashboard modal.' });
-        list2.createEl('li', { text: 'Right Click (Status Bar): Fast start or stop active session.' });
-        list2.createEl('li', { text: 'Middle Click (Status Bar): Cycle preset timer durations.' });
+        list2.createEl('li', { text: 'Left Click (Status Bar): Pause or resume the running countdown.' });
+        list2.createEl('li', { text: 'Right Click (Status Bar): Open main dashboard modal.' });
+        list2.createEl('li', { text: 'Middle Click (Status Bar): Cycle forward through duration presets.' });
 
         const item3 = helpContainer.createEl('details', { cls: 'pomodoro-help-item' });
         item3.createEl('summary', { text: '⏱️ Dynamic Timers & Gantt Visuals' });
@@ -1831,6 +1996,7 @@ class SlidingModalWithClock extends Modal {
         this.totalSlides = 3;
         this.clockInterval = null;
         this.sliderTrack = null;
+        this.taskTimers = plugin.taskTimers || (plugin.taskTimers = {});
     }
 
     onOpen() {
@@ -1865,15 +2031,141 @@ class SlidingModalWithClock extends Modal {
             this.timelineInterval = null;
         }
 
-        this.taskTimers = null;
-
         const { contentEl } = this;
         contentEl.empty();
     }
 }
 
+// --- RIGHT SIDEBAR TIMER MENU VIEW ---
+const SIDEBAR_VIEW_TYPE = 'timer-sidebar-view';
+
+const renderSidebarMenu = (rootEl, plugin) => {
+    if (plugin._sidebarFacade) {
+        const old = plugin._sidebarFacade;
+        if (old.clockInterval) clearInterval(old.clockInterval);
+        if (old.timelineInterval) clearInterval(old.timelineInterval);
+        if (old.ganntInterval) clearInterval(old.ganntInterval);
+    }
+
+    rootEl.empty();
+    rootEl.addClass('controlar-sidebar-view');
+
+    const facade = {
+        plugin: plugin,
+        app: plugin.app,
+        taskTimers: plugin.taskTimers || (plugin.taskTimers = {}),
+        slideTwoFilter: { activeFilter: 'all', selectedBadgeNames: new Set() },
+        refreshSlideTwo: () => {}
+    };
+    plugin._sidebarFacade = facade;
+
+    const clockWrap = rootEl.createDiv({ cls: 'controlar-sidebar-section controlar-sidebar-clock' });
+    slideOneClock(clockWrap, facade);
+
+    const timelineWrap = rootEl.createDiv({ cls: 'controlar-sidebar-section controlar-sidebar-timeline' });
+    slideOneTimeLine(timelineWrap, facade);
+
+    return facade;
+};
+
+class SidebarTimerView extends ItemView {
+    constructor(leaf, pluginInstance) {
+        super(leaf);
+        this.pluginInstance = pluginInstance;
+    }
+
+    getViewType() {
+        return SIDEBAR_VIEW_TYPE;
+    }
+
+    getDisplayText() {
+        return 'Timer Menu';
+    }
+
+    getIcon() {
+        return 'timer';
+    }
+
+    async onOpen() {
+        renderSidebarMenu(this.contentEl, this.pluginInstance);
+        const el = this.contentEl;
+        const openModal = () => {
+            new SlidingModalWithClock(this.pluginInstance.app, this.pluginInstance).open();
+        };
+        if (!el.dataset.menuListeners) {
+            el.dataset.menuListeners = '1';
+            el.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                openModal();
+            });
+            el.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0) return;
+                this._lpX = e.clientX;
+                this._lpY = e.clientY;
+                if (this._lpTimer) clearTimeout(this._lpTimer);
+                this._lpTimer = setTimeout(() => {
+                    this._lpTimer = null;
+                    openModal();
+                }, 600);
+            });
+            el.addEventListener('pointermove', (e) => {
+                if (this._lpTimer && (Math.abs(e.clientX - this._lpX) > 10 || Math.abs(e.clientY - this._lpY) > 10)) {
+                    clearTimeout(this._lpTimer);
+                    this._lpTimer = null;
+                }
+            });
+            const cancelLongPress = () => {
+                if (this._lpTimer) {
+                    clearTimeout(this._lpTimer);
+                    this._lpTimer = null;
+                }
+            };
+            el.addEventListener('pointerup', cancelLongPress);
+            el.addEventListener('pointerleave', cancelLongPress);
+            el.addEventListener('pointercancel', cancelLongPress);
+            el.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
+    }
+
+    async onClose() {
+        const facade = this.pluginInstance._sidebarFacade;
+        if (facade) {
+            if (facade.clockInterval) clearInterval(facade.clockInterval);
+            if (facade.timelineInterval) clearInterval(facade.timelineInterval);
+            if (facade.ganntInterval) clearInterval(facade.ganntInterval);
+        }
+        if (this._lpTimer) {
+            clearTimeout(this._lpTimer);
+            this._lpTimer = null;
+        }
+        this.pluginInstance._sidebarFacade = null;
+    }
+}
+
 // Main Plugin Class
 module.exports = class MyStatusBarPlugin extends Plugin {
+    async getFolderFiles(relativePath) {
+        try {
+            const basePath = (this.manifest.dir || '') + '/' + relativePath;
+            const listResult = await this.app.vault.adapter.list(basePath);
+            if (!listResult || !Array.isArray(listResult.files)) return [];
+            return listResult.files
+                .map(f => f.split('/').pop())
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b));
+        } catch (e) {
+            return [];
+        }
+    }
+
+    async populateAssetOptions() {
+        const target = fileData.data ? fileData.data : fileData;
+        target.backgrounds = await this.getFolderFiles('asset/image');
+        target.alarmSounds = await this.getFolderFiles('asset/audio/alarm');
+        target.ambientSounds = await this.getFolderFiles('asset/audio/background');
+        await this.saveData(fileData);
+    }
+
     async onload() {
         const rawData = await this.loadData();
         console.log('Loading Status Bar Plugin with Clock Slider Modal...');
@@ -1882,18 +2174,246 @@ module.exports = class MyStatusBarPlugin extends Plugin {
         }
         console.log("Data is loaded", fileData);
 
-        const statusBarItemEl = this.addStatusBarItem();
-        statusBarItemEl.setText('⚡ Open Slider Modal the new one');
-        statusBarItemEl.style.cursor = 'pointer';
+        // Re-link the persisted global task to its live task object so the
+        // timeline can highlight it after a reload.
+        if (fileData?.data?.globalTasks?.id) {
+            const liveGlobal = findTaskById(fileData, fileData.data.globalTasks.id);
+            if (liveGlobal) {
+                fileData.data.globalTasks = liveGlobal;
+            }
+        }
 
-        statusBarItemEl.addEventListener('click', () => {
+        await this.populateAssetOptions();
+
+        const statusBarItemEl = this.addStatusBarItem();
+        statusBarItemEl.addClass('controlar-status-bar-timer');
+        statusBarItemEl.style.cursor = 'pointer';
+        statusBarItemEl.style.padding = '0 8px';
+        statusBarItemEl.style.borderRadius = '4px';
+        statusBarItemEl.style.fontFamily = 'monospace';
+        statusBarItemEl.style.fontWeight = 'bold';
+        statusBarItemEl.style.marginLeft = '6px';
+
+        this.taskTimers = this.taskTimers || {};
+        this.statusPresetIndex = 0;
+        this.statusPaused = false;
+        this.slideTwoFilter = this.slideTwoFilter || { activeFilter: 'all', selectedBadgeNames: new Set() };
+
+        // Live remaining time (and total span) of the global task's timer
+        const computeGlobalRemaining = () => {
+            const globalTask = fileData?.data?.globalTasks;
+            if (!globalTask || globalTask.completed) return null;
+            const mode = getTimerMode(globalTask);
+            const dur = getTimerDurationSeconds(globalTask, mode);
+            let entry = this.taskTimers[globalTask.id];
+            if (!entry) {
+                entry = { startedAt: Date.now(), durationSeconds: dur, mode };
+                this.taskTimers[globalTask.id] = entry;
+            } else if (entry.mode !== 'preset' && (entry.mode !== mode || entry.durationSeconds !== dur)) {
+                entry.mode = mode;
+                entry.durationSeconds = dur;
+                entry.startedAt = Date.now();
+            }
+
+            if (entry.mode !== 'preset') {
+                if (mode === 'gapCycleUntilDeadline' && !globalTask.timerDeadline) {
+                    const e = getExpiredMinutes(globalTask);
+                    if (e && e.type === 'clock') {
+                        const now = new Date();
+                        const dl = new Date(now.getFullYear(), now.getMonth(), now.getDate(), e.hour, e.minute);
+                        globalTask.timerDeadline = dl.getTime();
+                    } else if (e) {
+                        globalTask.timerDeadline = Date.now() + e.minutes * 60000;
+                    }
+                }
+                if (mode === 'expiredTimer' && dur == null && !entry.deadline) {
+                    const e = getExpiredMinutes(globalTask);
+                    if (e && e.type === 'clock') {
+                        const now = new Date();
+                        const dl = new Date(now.getFullYear(), now.getMonth(), now.getDate(), e.hour, e.minute);
+                        entry.deadline = dl.getTime();
+                    }
+                }
+            }
+
+            let remaining = null;
+            let totalMs = 0;
+            if (entry.paused) {
+                remaining = entry.pausedRemaining != null ? entry.pausedRemaining : 0;
+                totalMs = entry.pausedTotalMs || 0;
+            } else if (entry.deadline != null) {
+                remaining = (entry.deadline - Date.now()) / 1000;
+                totalMs = entry.deadline - entry.startedAt;
+            } else if (entry.durationSeconds != null && entry.durationSeconds > 0) {
+                remaining = entry.durationSeconds - (Date.now() - entry.startedAt) / 1000;
+                totalMs = entry.durationSeconds * 1000;
+            }
+            return { remaining, totalMs, entry, mode, globalTask };
+        };
+
+        // Time presets = durations (seconds) of slide one's timeline filtered tasks
+        const buildTimelinePresets = () => {
+            const presets = [];
+            const seenIds = new Set();
+            const filter = this.slideTwoFilter || {};
+            const activeFilter = filter.activeFilter || 'all';
+            const selectedBadgeNames = filter.selectedBadgeNames || new Set();
+            const showUncategorized = activeFilter === 'all' || selectedBadgeNames.has('Uncategorized');
+
+            const categories = fileData?.data?.category || fileData?.category || [];
+            const visibleCategories = activeFilter === 'all'
+                ? categories
+                : activeFilter === 'categories'
+                    ? categories.filter(cat => selectedBadgeNames.has(typeof cat === 'string' ? cat : cat.Name))
+                    : [];
+
+            const push = (task) => {
+                if (!task || task.completed || task.isCompleted) return;
+                if (task.id != null) {
+                    if (seenIds.has(task.id)) return;
+                    seenIds.add(task.id);
+                }
+                const dur = getTimerDurationSeconds(task, getTimerMode(task));
+                if (dur != null && dur > 0) presets.push(dur);
+            };
+
+            if (showUncategorized) {
+                const uncategorizedTasks = fileData?.data?.notCategoriseTasks || fileData?.notCategoriseTasks || [];
+                uncategorizedTasks.forEach(push);
+            }
+            visibleCategories.forEach(cat => {
+                (cat.Tasks || cat.tasks || []).forEach(push);
+            });
+            return presets;
+        };
+
+        const stopStatusInterval = () => {
+            if (this.statusTimerInterval) {
+                clearInterval(this.statusTimerInterval);
+                this.statusTimerInterval = null;
+            }
+        };
+
+        const updateStatusTimer = () => {
+            const info = computeGlobalRemaining();
+            if (!info) {
+                statusBarItemEl.setText(this.statusPaused ? '⏸ 00:00' : '▶ 00:00');
+                statusBarItemEl.style.backgroundColor = '';
+                return;
+            }
+            // Preset countdown finished → fall back to the global task's own timer
+            if (info.remaining != null && info.remaining <= 0 && info.entry.mode === 'preset') {
+                delete this.taskTimers[info.globalTask.id];
+                updateStatusTimer();
+                return;
+            }
+            const remaining = info.remaining != null ? Math.max(0, info.remaining) : 0;
+            const totalSeconds = info.totalMs / 1000;
+            const progress = totalSeconds > 0 ? remaining / totalSeconds : 0;
+            statusBarItemEl.setText((info.entry.paused ? '⏸ ' : '▶ ') + formatCountdown(remaining));
+            statusBarItemEl.style.backgroundColor = getColor(progress);
+        };
+
+        const startStatusInterval = () => {
+            stopStatusInterval();
+            updateStatusTimer();
+            this.statusTimerInterval = setInterval(updateStatusTimer, 1000);
+        };
+
+        const togglePause = () => {
+            const info = computeGlobalRemaining();
+            if (!info) return;
+            if (info.entry.paused) {
+                const rem = info.entry.pausedRemaining != null ? info.entry.pausedRemaining : 0;
+                if (info.entry.deadline != null) {
+                    info.entry.deadline = Date.now() + rem * 1000;
+                } else if (info.entry.durationSeconds != null && info.entry.durationSeconds > 0) {
+                    info.entry.startedAt = Date.now() - (info.entry.durationSeconds - rem) * 1000;
+                }
+                delete info.entry.paused;
+                delete info.entry.pausedRemaining;
+                delete info.entry.pausedTotalMs;
+                this.statusPaused = false;
+                startStatusInterval();
+            } else {
+                info.entry.paused = true;
+                info.entry.pausedRemaining = info.remaining != null ? Math.max(0, info.remaining) : 0;
+                info.entry.pausedTotalMs = info.totalMs;
+                this.statusPaused = true;
+                stopStatusInterval();
+                updateStatusTimer();
+            }
+        };
+
+        const cyclePreset = () => {
+            const globalTask = fileData?.data?.globalTasks;
+            const presets = buildTimelinePresets();
+            if (!globalTask || presets.length === 0) return;
+            this.statusPresetIndex = (this.statusPresetIndex || 0) + 1;
+            if (this.statusPresetIndex >= presets.length) this.statusPresetIndex = 0;
+            let entry = this.taskTimers[globalTask.id] || {};
+            entry.mode = 'preset';
+            entry.durationSeconds = presets[this.statusPresetIndex];
+            entry.startedAt = Date.now();
+            entry.deadline = null;
+            delete entry.paused;
+            delete entry.pausedRemaining;
+            delete entry.pausedTotalMs;
+            this.taskTimers[globalTask.id] = entry;
+            this.statusPaused = false;
+            startStatusInterval();
+        };
+
+        // Left click: pause or resume the running countdown
+        statusBarItemEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePause();
+        });
+
+        // Right click: open the slider modal
+        statusBarItemEl.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             new SlidingModalWithClock(this.app, this).open();
+        });
+
+        // Middle / scroll-wheel click: cycle forward through the duration presets
+        statusBarItemEl.addEventListener('auxclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.button === 1) cyclePreset();
+        });
+
+        startStatusInterval();
+
+        // Right sidebar timer menu (works on desktop and mobile)
+        this.registerView(SIDEBAR_VIEW_TYPE, (leaf) => new SidebarTimerView(leaf, this));
+
+        this.app.workspace.onLayoutReady(async () => {
+            await this.openSidebarView();
         });
 
         // readData(); 
     }
 
+    async openSidebarView() {
+        const { workspace } = this.app;
+        const existing = workspace.getLeavesOfType(SIDEBAR_VIEW_TYPE);
+        if (existing.length > 0) {
+            workspace.revealLeaf(existing[0]);
+            return;
+        }
+        const leaf = workspace.getRightLeaf(false) || workspace.getLeaf('tab');
+        if (!leaf) return;
+        await leaf.setViewState({ type: SIDEBAR_VIEW_TYPE, active: true });
+        workspace.revealLeaf(leaf);
+    }
+
     onunload() {
+        if (this.statusTimerInterval) {
+            clearInterval(this.statusTimerInterval);
+            this.statusTimerInterval = null;
+        }
         console.log('Unloading Plugin.');
     }
 };
