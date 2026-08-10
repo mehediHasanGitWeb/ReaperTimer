@@ -39,6 +39,45 @@ const applyControlarTheme = (plugin, index) => {
 };
 
 
+// When a task is saved, visually detach (clone) the form from the controlar
+// and fly it into slide 2's tasks container before re-rendering the new task.
+const flyFormToSlideTwo = (formContainer) => {
+    const target = document.querySelector('.slide-two-tasks-scrollbar');
+    if (!target || !formContainer) return false;
+
+    const src = formContainer.getBoundingClientRect();
+    const dst = target.getBoundingClientRect();
+    if (src.width === 0 || src.height === 0 || (dst.width === 0 && dst.height === 0)) {
+        return false;
+    }
+
+    const clone = formContainer.cloneNode(true);
+    clone.classList.add('controlar-edit-fly-clone');
+    clone.style.position = 'fixed';
+    clone.style.zIndex = '9999';
+    clone.style.pointerEvents = 'none';
+    clone.style.margin = '0';
+    clone.style.left = src.left + 'px';
+    clone.style.top = src.top + 'px';
+    clone.style.width = src.width + 'px';
+    document.body.appendChild(clone);
+
+    void clone.offsetWidth; // force reflow so the transition starts cleanly
+
+    const dx = (dst.left + dst.width / 2) - (src.left + src.width / 2);
+    const dy = (dst.top + dst.height / 2) - (src.top + src.height / 2);
+    clone.style.transition = 'transform 750ms cubic-bezier(0.22, 0.9, 0.3, 1), opacity 600ms ease';
+    clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.15)`;
+    clone.style.opacity = '0.35';
+
+    setTimeout(() => {
+        if (clone && typeof clone.remove === 'function') clone.remove();
+    }, 780);
+
+    return true;
+};
+
+
 
 
 const controlarEdit = (buttonGroup, instance) => {
@@ -254,12 +293,22 @@ const controlarEdit = (buttonGroup, instance) => {
             await instance.plugin.saveData(fileData);
         }
 
-        // Re-render Slide Two view if available
-        if (instance && typeof instance.refreshSlideTwo === 'function') {
-            instance.refreshSlideTwo();
-        }
-        if (instance && typeof instance.refreshSlideOne === 'function') {
-            instance.refreshSlideOne();
+        // Detach the form from the controlar and fly it into slide 2's tasks
+        // container, then re-render once it lands.
+        const flyApplied = flyFormToSlideTwo(formContainer);
+        const afterFlight = () => {
+            // Re-render Slide Two view if available
+            if (instance && typeof instance.refreshSlideTwo === 'function') {
+                instance.refreshSlideTwo();
+            }
+            if (instance && typeof instance.refreshSlideOne === 'function') {
+                instance.refreshSlideOne();
+            }
+        };
+        if (flyApplied) {
+            setTimeout(afterFlight, 780);
+        } else {
+            afterFlight();
         }
 
         // Reset input form for next task
@@ -533,36 +582,116 @@ const slideOneGanntChart = (parentContainer, instance) => {
     const ganntChartTimeAxisTimeline = ganntChartTimeAxis.createDiv({
         cls: 'slide-one-clock-part-gantt-chart-time-axis-timeline'
     });
-    const ganntChartTaskAxis = ganntChartEndTimeLine.createDiv({
-        cls: 'slide-one-clock-part-gantt-chart-task-axis',
-        text: "task"
-    });
     const ganntChartPage = ganntChartEndTimeLine.createDiv({
-        cls: 'slide-one-clock-part-gantt-chart-page',
-        text: "page"
+        cls: 'slide-one-clock-part-gantt-chart-page'
     });
-    const ganntChartPageTaskUnit = ganntChartPage.createDiv({
-        cls: 'slide-one-clock-part-gantt-chart-page-tasks'
+    const ganntChartBody = ganntChartPage.createDiv({
+        cls: 'slide-one-clock-part-gantt-chart-body'
+    });
+    const ganntChartCategoryAxis = ganntChartEndTimeLine.createDiv({
+        cls: 'slide-one-clock-part-gantt-chart-category-axis'
     });
 
-    const formatAxisTime = (date) => date.toLocaleTimeString('en-GB', { hour12: false });
+    const formatAxisTime = (date) => {
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    };
 
-    for (let i = 0; i < 6; i++) {
-        ganntChartPageTaskUnit.createDiv({
-            cls: 'slide-one-clock-part-gantt-chart-page-tasks-fonts',
-            text: "a"
+    const ROW_HEIGHT = 16;
+    const MAX_ROWS = Math.ceil(400 / ROW_HEIGHT);
+
+    const getTaskRuntime = (task) => {
+        const entry = instance.taskTimers && instance.taskTimers[task.id];
+        let durationSeconds = 60;
+        if (task.runtimeGap != null && Number(task.runtimeGap) > 0) {
+            durationSeconds = Number(task.runtimeGap) * 60;
+        } else if (entry && entry.durationSeconds != null && entry.durationSeconds > 0) {
+            durationSeconds = entry.durationSeconds;
+        } else {
+            const dur = getTimerDurationSeconds(task, getTimerMode(task));
+            if (dur != null && dur > 0) durationSeconds = dur;
+        }
+        const startMs = (entry && entry.startedAt != null)
+            ? entry.startedAt
+            : Date.now() - durationSeconds * 1000;
+        return { durationSeconds, startMs, endMs: startMs + durationSeconds * 1000 };
+    };
+
+    const collectColumns = () => {
+        const data = (fileData && fileData.data) || fileData || {};
+        const columns = [];
+        const seen = new Set();
+        const pushColumn = (name, color, tasks) => {
+            if (seen.has(name)) return;
+            seen.add(name);
+            columns.push({ name, color, tasks: tasks || [] });
+        };
+        (Array.isArray(data.category) ? data.category : []).forEach(cat => {
+            const name = typeof cat === 'string' ? cat : (cat.Name || 'Uncategorized');
+            const color = typeof cat === 'string' ? '#ffffff' : (cat.color || '#ffffff');
+            const catTasks = Array.isArray(cat.Tasks) ? cat.Tasks : [];
+            pushColumn(name, color, catTasks.filter(t => t && !t.completed && !t.isCompleted));
         });
-    }
-    ganntChartTimeAxisTimeline.createDiv({
-        cls: 'slide-one-clock-part-gantt-chart-time-axis-timeline-fonts',
-        text: formatAxisTime(new Date())
-    });
+        const uncategorized = Array.isArray(data.notCategoriseTasks) ? data.notCategoriseTasks : [];
+        const unc = uncategorized.filter(t => t && !t.completed && !t.isCompleted);
+        if (unc.length > 0) pushColumn('Uncategorized', '#ffffff', unc);
+        return columns;
+    };
 
-    // Every second: prepend a new tasks row (with 120 fonts) at the top of the
-    // page and animate it scrolling down. When it reaches the bottom, the
-    // bottom-most row is deleted. A matching time label is added/removed in the
-    // time-axis timeline so it corresponds 1:1 with the page tasks and scrolls
-    // in lock-step with them.
+    const renderCategoryAxis = (columns) => {
+        ganntChartCategoryAxis.empty();
+        columns.forEach(col => {
+            const cell = ganntChartCategoryAxis.createDiv({
+                cls: 'slide-one-clock-part-gantt-chart-category-axis-cell',
+                text: col.name
+            });
+            cell.style.backgroundColor = col.color || '#ffffff';
+        });
+    };
+
+    const buildRow = (columns, timeMs) => {
+        const rowEl = ganntChartBody.createDiv({ cls: 'slide-one-clock-part-gantt-chart-row' });
+        columns.forEach(col => {
+            const cell = rowEl.createDiv({ cls: 'slide-one-clock-part-gantt-chart-cell' });
+            const actives = col.tasks.filter(t => {
+                const r = getTaskRuntime(t);
+                return r.startMs <= timeMs && timeMs <= r.endMs;
+            });
+            if (actives.length > 0) {
+                cell.style.backgroundColor = col.color || '#ffffff';
+                cell.textContent = actives.map(a => a.name || a.description || 't').join(',');
+            } else {
+                cell.style.backgroundColor = 'rgba(255,255,255,0.06)';
+            }
+        });
+        return rowEl;
+    };
+
+    const buildLabel = (timeMs) => {
+        const labelEl = ganntChartTimeAxisTimeline.createDiv({
+            cls: 'slide-one-clock-part-gantt-chart-time-axis-timeline-fonts',
+            text: formatAxisTime(new Date(timeMs))
+        });
+        return labelEl;
+    };
+
+    const renderInitialRows = () => {
+        const columns = collectColumns();
+        renderCategoryAxis(columns);
+        const now = Date.now();
+        for (let i = MAX_ROWS - 1; i >= 0; i--) {
+            const timeMs = now - i * 1000;
+            ganntChartBody.insertBefore(buildRow(columns, timeMs), ganntChartBody.firstChild);
+            ganntChartTimeAxisTimeline.insertBefore(buildLabel(timeMs), ganntChartTimeAxisTimeline.firstChild);
+        }
+        ganntChartPage.scrollTop = 0;
+        ganntChartTimeAxisTimeline.scrollTop = 0;
+    };
+
+    // Every second: prepend a new row (with one cell per category) at the top
+    // and animate it scrolling down. When it reaches the bottom the oldest row
+    // is deleted. A matching time label is added/removed in the time-axis
+    // timeline so it scrolls in lock-step with the page.
     let ganntScrollAnim = null;
     const animateScrollToBottom = (onDone) => {
         if (ganntScrollAnim) {
@@ -588,38 +717,26 @@ const slideOneGanntChart = (parentContainer, instance) => {
     };
 
     const cyclePage = () => {
-        const now = new Date();
-        const newRow = ganntChartPage.createDiv({
-            cls: 'slide-one-clock-part-gantt-chart-page-tasks'
-        });
-        for (let i = 0; i < 120; i++) {
-            newRow.createDiv({
-                cls: 'slide-one-clock-part-gantt-chart-page-tasks-fonts',
-                text: "a"
-            });
-        }
-        if (ganntChartPage.firstChild) {
-            ganntChartPage.insertBefore(newRow, ganntChartPage.firstChild);
-        }
-
-        const timeLabel = ganntChartTimeAxisTimeline.createDiv({
-            cls: 'slide-one-clock-part-gantt-chart-time-axis-timeline-fonts',
-            text: formatAxisTime(now)
-        });
-        if (ganntChartTimeAxisTimeline.firstChild) {
-            ganntChartTimeAxisTimeline.insertBefore(timeLabel, ganntChartTimeAxisTimeline.firstChild);
-        }
+        const columns = collectColumns();
+        renderCategoryAxis(columns);
+        const now = Date.now();
+        const newRow = buildRow(columns, now);
+        ganntChartBody.insertBefore(newRow, ganntChartBody.firstChild);
+        const newLabel = buildLabel(now);
+        ganntChartTimeAxisTimeline.insertBefore(newLabel, ganntChartTimeAxisTimeline.firstChild);
 
         animateScrollToBottom(() => {
-            if (ganntChartPage.lastChild && ganntChartPage.lastChild !== newRow) {
-                ganntChartPage.lastChild.remove();
-                if (ganntChartTimeAxisTimeline.lastChild && ganntChartTimeAxisTimeline.lastChild !== timeLabel) {
+            if (ganntChartBody.lastChild && ganntChartBody.lastChild !== newRow) {
+                ganntChartBody.lastChild.remove();
+                if (ganntChartTimeAxisTimeline.lastChild && ganntChartTimeAxisTimeline.lastChild !== newLabel) {
                     ganntChartTimeAxisTimeline.lastChild.remove();
                 }
             }
             ganntChartTimeAxisTimeline.scrollTop = ganntChartPage.scrollTop;
         });
     };
+
+    renderInitialRows();
 
     if (instance.ganntInterval) {
         clearInterval(instance.ganntInterval);
@@ -641,6 +758,7 @@ const slideOneGanntChart = (parentContainer, instance) => {
         }
     });
 };
+
 
 
 
