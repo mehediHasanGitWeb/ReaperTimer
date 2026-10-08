@@ -26,3 +26,6 @@ audio-pack.zip
 
 # dev-only test scripts and their build output
 test/
+
+
+Claude outputs/
