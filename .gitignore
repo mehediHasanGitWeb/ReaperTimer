@@ -32,3 +32,5 @@ test/
 Claude outputs/
 
 .github/workflows
+
+asset/
