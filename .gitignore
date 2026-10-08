@@ -28,7 +28,7 @@ audio-pack.zip
 test/
 
 
+# screenshots saved by Claude (not part of the plugin)
 Claude outputs/
-Claude outputs
 
 .github/workflows
