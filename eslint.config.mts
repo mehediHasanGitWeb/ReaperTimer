@@ -13,6 +13,9 @@ export default defineConfig(
 		'package.json',
 		'package-lock.json',
 		'tsconfig.json',
+		// dev-only test scripts and their build output (not part of the plugin)
+		'test',
+		'scripts',
 	]),
 	{
 		languageOptions: {

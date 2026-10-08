@@ -8,10 +8,14 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"lint": "eslint ."
+		"lint": "eslint .",
+		"pack-audio": "node scripts/pack-audio.mjs",
+		"test": "node test/build.mjs test/store.diff.test.ts && node test/build.mjs test/persistence.test.ts && node test/build.mjs test/engine.test.ts",
+		"bench": "node test/build.mjs test/scale.bench.ts",
+		"test:ui": "node test/build_harness.mjs && node test/build_ui_harness.mjs && python3 test/vl.browser.test.py && python3 test/ui.browser.test.py && python3 test/ui.real.test.py"
 	},
 	"keywords": [],
-	"license": "0-BSD",
+	"license": "Apache-2.0",
 	"devDependencies": {
 		"@eslint/js": "^9.39.4",
 		"@types/node": "^22.15.17",
@@ -23,5 +27,8 @@
 		"obsidian": "latest",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.59.1"
+	},
+	"dependencies": {
+		"fflate": "0.8.2"
 	}
 }

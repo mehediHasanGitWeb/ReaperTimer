@@ -1,92 +1,99 @@
-# Obsidian Sample Plugin
+# Plugin Name
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+A task-timer dashboard for Obsidian. Create tasks with categories, colours and sounds, run countdowns from the status bar, and follow your day on a live timeline and Gantt chart.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+> Replace "Plugin Name" above with your plugin's final name (it should match `name` in `manifest.json`).
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+## Features
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+### Status bar timer
+A countdown for the currently selected task sits in Obsidian's status bar. Its colour changes as the time runs down.
 
-## First time developing plugins?
+| Mouse action | What it does |
+| --- | --- |
+| Left click | Pause or resume the countdown |
+| Right click | Open the dashboard |
+| Middle click | Cycle through duration presets |
 
-Quick starting guide for new plugin devs:
+### Dashboard
+The dashboard opens in a window with three slides. Use the arrow buttons on the left and right to move between them.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+At the top of the dashboard:
 
-## Releasing new releases
+- **Add task form** with task name, category, category colour, alarm sound, ambient sound, expiry time, gap, runtime gap, a time picker and an optional custom colour.
+- **Theme button**, which cycles through four looks: Default, Liquid Magma, Atlas Metal and Paper Crayon.
+- **Help button**, which opens a short in-app guide.
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+**Slide 1: Clock and timeline**
+- A live clock, with a progress bar for the selected task's countdown.
+- A timeline of your tasks and their timers, updated every second.
+- A seconds filter to narrow the timeline.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+**Slide 2: Tasks**
+- Category filter badges to show all tasks or only certain categories.
+- A summary of completed and pending tasks and the number of categories.
+- Task cards grouped by category, with **Start** and **Done** controls, plus a separate completed-tasks section.
 
-## Adding your plugin to the community plugin list
+**Slide 3: Gantt chart and end timeline**
+- A live Gantt chart of tasks by category, with its own options panel.
+- An end-of-day timeline with a magnifying glass. Drag or scroll its handle to look through different parts of the list.
+- Each panel has an **expand** button that lets it fill the slide. Click **collapse** to go back to both panels.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+### Sidebar timer
+A timer panel opens in Obsidian's right sidebar when the plugin loads. It works on desktop and mobile.
 
-## How to use
+### Sounds
+Each task can have an alarm sound and an ambient (background) sound.
 
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+The sounds are not part of the plugin install (Obsidian only downloads `main.js`, `manifest.json` and `styles.css`). The first time the plugin starts without them, it asks whether to download the sound pack (about 21 MB). You can also run **Download sound pack** from the command palette at any time.
 
-## Manually installing the plugin
+The files are saved in the plugin's own folder:
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- `asset/audio/alarm/` for alarm sounds
+- `asset/audio/background/` for ambient sounds
 
-## Improve code quality with eslint
+You can also add your own files to these folders; the plugin lists every file it finds there.
 
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+### Network use
+The plugin connects to the internet for one thing only: downloading the sound pack (`audio-pack.zip`) from this repository's GitHub releases, and only after you agree or run the command. Nothing is uploaded and no other data is sent.
 
-## Funding URL
+### Large task lists
+Small task lists are saved in the plugin's `data.json`, as usual. When a vault has more than 8,000 tasks, the plugin automatically splits them into smaller files in a `tasks` folder inside the plugin folder. Only the changed parts are rewritten on each save.
 
-You can include funding URLs where people who use your plugin can financially support it.
+## Installation
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+### From Community plugins
+1. Open **Settings → Community plugins** and turn off Restricted mode if needed.
+2. Select **Browse** and search for the plugin name.
+3. Select **Install**, then **Enable**.
 
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
+### Manual install
+1. Download `main.js`, `manifest.json` and `styles.css` from the latest [release](../../releases).
+2. Create the folder `<your vault>/.obsidian/plugins/<plugin-id>/`.
+3. Copy the three files into that folder.
+4. Reload Obsidian and enable the plugin in **Settings → Community plugins**.
+
+## Publishing the sound pack (maintainers)
+
+1. Put the audio files in `asset/audio/alarm/` and `asset/audio/background/`.
+2. Run `npm run pack-audio`. This creates `audio-pack.zip`.
+3. On GitHub, create a release with the tag `sound-pack-1` (the `SOUND_PACK_TAG` in `src/sounds/soundPack.ts`) and attach `audio-pack.zip`.
+4. If the sounds change later, bump `SOUND_PACK_TAG`, release the plugin, and upload the new zip under the new tag.
+
+## Development
+
+Requires Node.js 18 or newer.
+
+```bash
+npm install
+npm run dev     # rebuilds main.js on every change
+npm run build   # type-check and production build
+npm run lint    # lint with Obsidian's ESLint rules
+npm test        # store, persistence and timer-engine tests
 ```
 
-If you have multiple URLs, you can also do:
+For development, put the project folder in `<your vault>/.obsidian/plugins/`, run `npm run dev`, and reload Obsidian after changes.
 
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
-```
+## License
 
-## API Documentation
-
-See https://docs.obsidian.md
+Licensed under the [Apache License 2.0](LICENSE).

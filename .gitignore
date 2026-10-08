@@ -20,3 +20,9 @@ data.json
 
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
+
+# sound pack zip (uploaded to a GitHub release, not committed)
+audio-pack.zip
+
+# dev-only test scripts and their build output
+test/

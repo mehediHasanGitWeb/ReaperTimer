@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "ReaperTimer",
+	"name": "ReaperTimer",
 	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
+	"minAppVersion": "1.7.2",
+	"description": "Run task countdowns from the status bar, sort tasks into categories, and follow your day on a live timeline and Gantt chart.",
+	"author": "Mehedi",
+	"authorUrl": "https://github.com/mehediHasanGitWeb/ReaperTimer",
 	"fundingUrl": "https://obsidian.md/pricing",
 	"isDesktopOnly": false
 }
